@@ -16,12 +16,15 @@ theme and asset kits retargets the engine.
 | Area | State |
 | --- | --- |
 | Script → video (JSON) | Working: dialogue + narrated modes, 16:9 + 9:16 + thumbnail from one scene, voice-over timing |
-| Visual direction | **Chosen: Cinematic Geometric Editorial** (A's construction + C's light and depth). Benchmark v3 awaiting approval (section 3.1). Character design NOT locked |
+| Visual direction | **Approved: Cinematic Geometric Editorial.** Final visual standard NOT locked yet. Versatility benchmark + Person v2 awaiting review (section 3.2) |
 | Rig | Puppet rig v2: full skeleton, IK arms and legs, planted feet, look-at, lean/anticipation, secondary motion |
 | Props | Parenting to world / one hand / two-hand carry with smooth hand-offs |
 | Environments | **Space kit**: real 3D perspective with flat-shaded geometry, procedural architecture (atrium generator), lighting model, height fog. Plus the 2D parallax kit from v2 |
 | Concept visuals | Network kit in 2D and 3D (grow, recall wave, persistent glow, fade, dissolve), particle bursts. Charts/diagrams library not built yet |
-| Cinematography | Shot sequencer (cuts, per-shot camera keys, focus, depth-of-field bands, handheld drift) |
+| Cinematography | Shot sequencer + **semantic shot grammar** (establishing, closeUp, objectReveal, tracking, cutaway, scaleTransition); see `docs/SHOT_GRAMMAR.md` |
+| Look system | Shared identity (`src/themes/cge/identity.ts`): banded light, cool-shadow and warm-light tints, matte/metal/glass/water materials, low coloured haze, planar cast shadows |
+| Characters | **Person v2** (`src/themes/cge/Person.tsx`): faceted design system, proper hands, procedural cast variation; the Archivist is one preset. NOT locked |
+| Renderer | SVG Space renderer kept; Three.js evaluated with a measured spike; hybrid recommended (`docs/RENDERER_ASSESSMENT.md`) |
 | QC | Static QC (composition, readability, sync, movement, repetition, pacing), unit tests, visual regression, determinism, benchmarks |
 | Automation | Director / storyboard stage designed (section 5), not built |
 
@@ -128,6 +131,38 @@ Composition `Memory-v3-CinematicGeometric` (18 s, four shots), built with the ne
 5. **Geometry detail budget:** levels of detail (books merge into blocks with distance) to allow richer sets without slower renders.
 6. **More architecture generators** (stairs, bridges, arches, domes, outdoor terrain) for other metaphors.
 
+## 3.2 Versatility benchmark + Person v2 (awaiting review)
+
+Four 5-second scenes plus a character design sheet, all in one identity and built only from reusable kits. Compositions: `V-Urban`, `V-Machine`, `V-Nature`, `V-Abstract`, `Character-Sheet`.
+
+| Scene | Subject / light | Shots (semantic grammar) | Engine capabilities |
+| --- | --- | --- | --- |
+| Urban | Bright late-morning street, tram, cars, crowd | `establishing` → `tracking` (chase) | City kit (seeded buildings: massing, window rhythm, cornices, balconies, shopfronts, awnings, rooftops), street, lamps, vehicles, crowd walkers, procedural people, planar sun shadows |
+| Mechanical | Studio light, cutaway gearbox | `objectReveal` → `cutaway` | Mechanics kit (meshing gears at correct ratios, crank-slider, cutaway housing with painted sections, half sleeve), metal shading, 3D-tracked callouts |
+| Natural | Afternoon valley, river, forest, mountains | `tracking` (drone glide) | Terrain kit (heightfield, carved river, slope/height colouring, flattened water), procedural trees (broadleaf and conifer), rocks, mountains, water ripples, birds, colour-shifted haze |
+| Abstract | Dawn plane, surreal floating forms | `closeUp` → `scaleTransition` | Formation-morph kit (one cube becomes 140 steps of a monumental spiral), long cast shadow, extreme scale contrast |
+
+**Art direction changes in response to v3 feedback:**
+- **Haze:** lowered to density 0.003–0.006, and coloured (blue at distance, warm near the horizon) instead of white wash.
+- **Colour relationships:** every scene keeps the identity anchors (vermilion accent, amber energy, cream, ink, teal), and its local palette uses the same cool-shadow / warm-light tint, so a city, a machine, a valley and a dawn plane read as one channel.
+- **Materials:** stylized response, not photoreal. Banded light, a single metal/glass/water highlight band, painted cutaway sections.
+- **Less repetition:** every building, tree, rock, person and shelf varies by seed.
+- **Unchanged:** the cinematic composition, scale, camera system and editorial typography.
+
+**Person v2 (character design, exploratory):**
+- **Same language as the environments:** faceted planes, banded lit/shadow tones and the same tints.
+- **Head:** a faceted profile (brow, nose, lips, chin, jaw), an almond eye with lid line, a wedge brow.
+- **Hands:** palm, four finger strips and thumb, with relaxed, hold and open poses.
+- **Outfits and hair:** coat, jacket, sweater, dress; bob, short, bun, long, beanie.
+- **Variation:** height, build, skin, hair and palette, plus a bag.
+- **Presets and crowds:** `randomPerson(seed)` produces a consistent, varied cast; the Archivist is a preset.
+
+**Known weaknesses (for the next round):**
+- **Views:** profile/three-quarter only. No front or back views, so characters can't face the camera.
+- **Mid-shot blocks:** in the abstract scene, blocks close to the camera are large mid-transition.
+- **Terrain facets:** large near-camera terrain facets read as flat.
+- **Composition checks:** the camera is not yet automatically kept out of geometry or occluders; the director must pick safe parameters (see `docs/SHOT_GRAMMAR.md`).
+
 ## 4. Architecture review: capability matrix
 
 | Capability | Status | Notes / required change |
@@ -193,9 +228,9 @@ props[], actions[], camera: 'wide'|'medium'|'close'|..., onScreenText?, diagram?
 | Command | What it covers |
 | --- | --- |
 | `npm run typecheck` | TypeScript |
-| `npm test` | 28 unit tests: compiler validation and timing, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
+| `npm test` | 41 unit tests: compiler validation and timing, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
 | `npm run check` | Compiles every script and runs QC: overlap, off-screen/cropped speakers (both formats), fast speech, long Shorts subtitles, short captions, line overlap, sliding walks, pose flicker, repeated gestures, repeated backdrops, pacing metrics |
-| `npm run test:visual` | Renders 14 key frames and compares them with approved goldens (per platform), plus a determinism re-render. `-- --update` approves a new look |
+| `npm run test:visual` | Renders 19 key frames and compares them with approved goldens (per platform), plus a determinism re-render. `-- --update` approves a new look |
 | `npm run benchmark` | Render speed, real-time factor, projected 10-minute render time, peak memory of the whole render process tree, versatility counts, authoring effort |
 
 **Not yet covered:** checks on rendered pixels (text contrast, clipping detected from
@@ -225,6 +260,12 @@ Measured 2026-11-24 on a 4-core cloud Xeon, 1920×1080, Remotion default concurr
 | B · Textured | 105 s | 7.0× | 70 min | 2.7 GB |
 | C · Cinematic | 207 s | 13.8× | 138 min | 3.6 GB |
 | **v3 · Cinematic Geometric (18 s)** | 171 s | 9.5× | 95 min | 3.8 GB |
+| Versatility · Urban (5 s) | 23.5 s | 4.7× | 47 min | 2.6 GB |
+| Versatility · Mechanical (5 s) | 19.2 s | 3.8× | 38 min | 2.4 GB |
+| Versatility · Natural (5 s) | 26.9 s | 5.4× | 54 min | 2.9 GB |
+| Versatility · Abstract (5 s) | 18.8 s | 3.8× | 38 min | 2.4 GB |
+
+Renderer comparison (same 60 frames): Space SVG 209 ms/frame vs Three.js 324 ms/frame on software WebGL (no GPU). See `docs/RENDERER_ASSESSMENT.md`.
 
 All four fit comfortably in 24 GB. C's cost is dominated by blur filters (depth of
 field, bloom, soft shadows); B's by per-frame ink jitter on ~1,000 shapes. Both have
@@ -248,8 +289,9 @@ Ranked by visual impact × scalability ÷ effort, respecting dependencies.
 | # | Item | Impact | Scalability | Effort | Depends on |
 | --- | --- | --- | --- | --- | --- |
 | 0 | ~~Choose visual direction~~ → Cinematic Geometric Editorial. **Approve benchmark v3** (section 3.1) | ★★★ | ★★★ | S | You |
-| 0.5 | Character design pass (close-up anatomy, views, expressions), then lock | ★★★ | ★★★ | M | 0 |
-| 0.6 | Shot grammar as data (named shot types from subject + intent) | ★★★ | ★★★ | M | 0 |
+| 0.5 | Character design: front and back views, expression set, review Person v2, then lock | ★★★ | ★★★ | M | 0 |
+| 0.6 | ~~Shot grammar~~ (done). Next: subject registry, camera collision/occlusion avoidance, composition rules | ★★★ | ★★★ | M | — |
+| 0.7 | Renderer decision: measure the Three.js spike on the Mac mini GPU; adopt the hybrid environment layer only if a trigger fires | ★★ | ★★★ | S | Mac mini run |
 | 1.1 | Light rig as scene data, consumed by the locked theme | ★★★ | ★★ | M | 0 |
 | 1.2 | Character part system (slots, outfits, hair, accessories) + design pass + turnarounds | ★★★ | ★★★ | L | 0 |
 | 1.3 | Action vocabulary in the JSON: walkTo / carry / reach / place / give / point-at / look-at, compiled to puppet + props | ★★★ | ★★★ | M | — |

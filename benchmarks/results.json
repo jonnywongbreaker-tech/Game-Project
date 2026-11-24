@@ -327,5 +327,88 @@
         "manualSteps": "write script → npm run check → npm run render"
       }
     ]
+  },
+  {
+    "date": "2026-11-24T23:04:22.503Z",
+    "machine": {
+      "platform": "linux x64",
+      "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+      "cores": 4,
+      "memoryGB": 16.9,
+      "node": "v22.23.5"
+    },
+    "bundleSeconds": 3.3,
+    "concurrency": "default",
+    "renders": [
+      {
+        "id": "V-Urban-Long",
+        "resolution": "1920x1080",
+        "frames": 150,
+        "videoSeconds": 5,
+        "renderSeconds": 23.5,
+        "fps": 6.4,
+        "realtimeFactor": 4.7,
+        "tenMinuteVideoMinutes": 47,
+        "peakMemoryMB": 2580
+      },
+      {
+        "id": "V-Machine-Long",
+        "resolution": "1920x1080",
+        "frames": 150,
+        "videoSeconds": 5,
+        "renderSeconds": 19.2,
+        "fps": 7.8,
+        "realtimeFactor": 3.84,
+        "tenMinuteVideoMinutes": 38.4,
+        "peakMemoryMB": 2443
+      },
+      {
+        "id": "V-Nature-Long",
+        "resolution": "1920x1080",
+        "frames": 150,
+        "videoSeconds": 5,
+        "renderSeconds": 26.9,
+        "fps": 5.6,
+        "realtimeFactor": 5.38,
+        "tenMinuteVideoMinutes": 53.8,
+        "peakMemoryMB": 2854
+      },
+      {
+        "id": "V-Abstract-Long",
+        "resolution": "1920x1080",
+        "frames": 150,
+        "videoSeconds": 5,
+        "renderSeconds": 18.8,
+        "fps": 8,
+        "realtimeFactor": 3.77,
+        "tenMinuteVideoMinutes": 37.7,
+        "peakMemoryMB": 2434
+      }
+    ],
+    "versatility": {
+      "castPresets": 5,
+      "poses": 8,
+      "expressions": 7,
+      "backdrops": 4,
+      "captionStyles": 3,
+      "visualStyles": 3,
+      "characterStates": 56
+    },
+    "automation": [
+      {
+        "id": "Ep001",
+        "beatsPerMinute": 19.7,
+        "scriptBytesPerMinute": 2718,
+        "qcWarnings": 0,
+        "manualSteps": "write script → npm run check → npm run render"
+      },
+      {
+        "id": "Ep002",
+        "beatsPerMinute": 15.2,
+        "scriptBytesPerMinute": 2728,
+        "qcWarnings": 0,
+        "manualSteps": "write script → npm run check → npm run render"
+      }
+    ]
   }
 ]

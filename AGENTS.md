@@ -24,5 +24,12 @@ npm run studio           # interactive preview of every composition
 - `src/themes`: visual themes A/B/C (v2 benchmark) and `cge/` (Cinematic Geometric Editorial: Archivist skin, type system)
 - `src/prototypes/memory`: v2 style benchmark; `src/prototypes/memory3`: v3 four-shot benchmark (current)
 - `src/engine/Space.tsx`: 3D renderer (polygons + sprites, depth sort, depth of field)
+- `src/kit/{primitives,city,mechanics,terrain,formation,crowd,shotGrammar}.ts`: reusable scene and shot kits
+- `src/prototypes/versatility`: four versatility scenes + character sheet; `src/themes/cge/{identity,Person,personSprite}`: shared look and Person v2
+- `src/spikes/ThreeAtrium.tsx` + `scripts/spike-three.ts`: Three.js comparison spike (evaluation only)
+
+## Open review requests
+- `docs/RENDERER_ASSESSMENT.md`: challenge the hybrid recommendation (questions at the end).
+- `docs/SHOT_GRAMMAR.md`: review the semantic shot design.
 - `src/qc`: quality-control analyser; `tests/`: unit tests and visual goldens
 - `scripts`: check, render, benchmark, visual-test, bake-textures, sync-audio

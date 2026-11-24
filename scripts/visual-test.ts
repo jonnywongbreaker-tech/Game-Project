@@ -27,6 +27,11 @@ const FRAMES: [string, number][] = [
   ['Memory-v3-CinematicGeometric-Long', 75],
   ['Memory-v3-CinematicGeometric-Long', 190],
   ['Memory-v3-CinematicGeometric-Long', 405],
+  ['V-Urban-Long', 40],
+  ['V-Machine-Long', 130],
+  ['V-Nature-Long', 120],
+  ['V-Abstract-Long', 140],
+  ['Character-Sheet-Long', 20],
 ];
 const SCALE = 0.5;
 /** Fraction of pixels allowed to differ before a frame counts as changed. */

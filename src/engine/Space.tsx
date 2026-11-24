@@ -1,7 +1,7 @@
 import React from 'react';
 import {AbsoluteFill} from 'remotion';
 import {
-  type Atmosphere, type Camera3, centroid, clipNear, dot, type Light, makeView, type Poly, shade, sub, toCamera, toScreen, type V3, type View,
+  type Atmosphere, type Camera3, centroid, clipNear, dot, type Light, type Look, makeView, type Poly, shade, sub, toCamera, toScreen, type V3, type View,
 } from '../kit/space';
 import {useLayout} from './layout';
 
@@ -25,6 +25,9 @@ export interface SpaceProps {
   /** Depth of field: objects far from `focus` (m) are blurred in bands. */
   dof?: {focus: number; far: number; near: number};
   defs?: React.ReactNode;
+  /** Stylized shading (bands + tints). Omit for plain lighting. */
+  look?: Look;
+  /** Polygons with no back-face culling (e.g. double-sided cutaways, foliage). */
 }
 
 type Item = {z: number; node: React.ReactNode};
@@ -33,14 +36,15 @@ type Item = {z: number; node: React.ReactNode};
  * Renders a 3D scene of flat-shaded polygons + sprites with true perspective,
  * painter's-algorithm depth sorting, and band-based depth of field.
  */
-export const Space: React.FC<SpaceProps> = ({camera, polys, sprites = [], lights, atmosphere, background, dof, defs}) => {
+export const Space: React.FC<SpaceProps> = ({camera, polys, sprites = [], lights, atmosphere, background, dof, defs, look}) => {
   const {width, height} = useLayout();
   const view = makeView(camera, width, height);
   const items: Item[] = [];
 
   polys.forEach((p, i) => {
     const c = centroid(p.pts);
-    if (dot(p.n, sub(view.pos, c)) <= 0) return; // back-face
+    const facing = dot(p.n, sub(view.pos, c));
+    if (facing <= 0 && !p.doubleSided) return; // back-face
     const cam = clipNear(p.pts.map((q) => toCamera(view, q)), view.near);
     if (cam.length < 3) return;
     const scr = cam.map((q) => toScreen(view, q));
@@ -56,9 +60,9 @@ export const Space: React.FC<SpaceProps> = ({camera, polys, sprites = [], lights
     }
     if (maxX < -50 || minX > width + 50 || maxY < -50 || minY > height + 50) return;
     const z = cam.reduce((s, q) => s + q[2], 0) / cam.length + (p.bias ?? 0);
-    const fill = shade(c, p.n, p.m, lights, view.pos, atmosphere);
+    const fill = shade(c, facing > 0 ? p.n : ([-p.n[0], -p.n[1], -p.n[2]] as V3), p.m, lights, view.pos, atmosphere, look);
     const d = `M${scr.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join('L')}Z`;
-    items.push({z, node: <path key={`p${i}`} d={d} fill={fill} stroke={fill} strokeWidth={0.6} strokeLinejoin="round" />});
+    items.push({z, node: <path key={`p${i}`} d={d} fill={fill} stroke={fill} strokeWidth={0.6} strokeLinejoin="round" opacity={p.opacity} />});
   });
 
   sprites.forEach((s, i) => {

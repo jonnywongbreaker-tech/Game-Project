@@ -5,13 +5,14 @@ import {FONT} from './engine/fonts';
 import {FrozenFrame} from './engine/time';
 import {rigTest} from './episodes/RigTest';
 import {MEMORY_BENCHMARKS} from './prototypes/memory';
+import {VERSATILITY} from './prototypes/versatility';
 import {SCRIPTS} from './episodes/scripts';
 import audioDurations from './generated/audio-durations.json';
 import {compileScript} from './script/compile';
 import {ScriptEpisode} from './script/ScriptEpisode';
 
 /** Code-written episodes (escape hatch). JSON episodes live in episodes/scripts.ts. */
-const CODE_EPISODES: CodeEpisode[] = [rigTest, ...MEMORY_BENCHMARKS];
+const CODE_EPISODES: CodeEpisode[] = [rigTest, ...MEMORY_BENCHMARKS, ...VERSATILITY];
 
 interface Registered {
   id: string;

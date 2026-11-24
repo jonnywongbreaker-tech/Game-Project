@@ -1,12 +1,15 @@
 # Latest benchmark
 
-2026-11-24 22:41 UTC · Intel(R) Xeon(R) Processor @ 2.10GHz · 4 cores · 16.9 GB · linux x64 · concurrency default
+2026-11-24 23:04 UTC · Intel(R) Xeon(R) Processor @ 2.10GHz · 4 cores · 16.9 GB · linux x64 · concurrency default
 
 | Composition | Resolution | Video | Render | FPS | × real time | 10-min video | Peak memory |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Memory-v3-CinematicGeometric-Long | 1920x1080 | 18.0s | 171.2s | 3.2 | 9.51 | 95.1 min | 3816 MB |
+| V-Urban-Long | 1920x1080 | 5.0s | 23.5s | 6.4 | 4.7 | 47 min | 2580 MB |
+| V-Machine-Long | 1920x1080 | 5.0s | 19.2s | 7.8 | 3.84 | 38.4 min | 2443 MB |
+| V-Nature-Long | 1920x1080 | 5.0s | 26.9s | 5.6 | 5.38 | 53.8 min | 2854 MB |
+| V-Abstract-Long | 1920x1080 | 5.0s | 18.8s | 8 | 3.77 | 37.7 min | 2434 MB |
 
-Bundle (one-off per render session): 3s.
+Bundle (one-off per render session): 3.3s.
 
 **Versatility:** castPresets 5 · poses 8 · expressions 7 · backdrops 4 · captionStyles 3 · visualStyles 3 · characterStates 56
 

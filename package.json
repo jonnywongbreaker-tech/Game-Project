@@ -16,10 +16,13 @@
   },
   "license": "UNLICENSED",
   "dependencies": {
+    "@react-three/fiber": "8.17.10",
     "@remotion/cli": "4.0.547",
+    "@remotion/three": "4.0.547",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "remotion": "4.0.547"
+    "remotion": "4.0.547",
+    "three": "0.170.0"
   },
   "devDependencies": {
     "@remotion/bundler": "4.0.547",
@@ -28,6 +31,7 @@
     "@types/pngjs": "6.0.5",
     "@types/react": "18.3.32",
     "@types/react-dom": "18.3.7",
+    "@types/three": "0.170.0",
     "pixelmatch": "6.0.0",
     "pngjs": "7.0.0",
     "tsx": "4.23.15",

@@ -129,6 +129,22 @@ export interface Material {
   emissive?: number;
   /** Fraction of light received (0.2 = deep recess). */
   occlusion?: number;
+  /** Stylized response. 'flat' ignores lights (used for painted shadows/decals). */
+  kind?: 'matte' | 'metal' | 'glass' | 'water' | 'flat';
+}
+
+/**
+ * The stylized "look": light is quantized into bands, shadows shift toward a
+ * cool tint and lights toward a warm tint. This is what makes every scene share
+ * one visual identity regardless of subject.
+ */
+export interface Look {
+  /** Number of light bands (0 = smooth). */
+  bands: number;
+  shadowTint: string;
+  lightTint: string;
+  /** 0..1: how strongly shadows take on the shadow tint. */
+  tintStrength: number;
 }
 
 /** Light arriving at a surface point with normal n, as an RGB multiplier. */
@@ -168,12 +184,40 @@ export function smoothstep(a: number, b: number, x: number) {
   return t * t * (3 - 2 * t);
 }
 
+/** Stylized colour for an albedo under light L (shared by geometry and characters). */
+export function stylize(base: RGB, L: RGB, look: Look, extra = 0): RGB {
+  const lum = 0.3 * L[0] + 0.59 * L[1] + 0.11 * L[2] + extra;
+  const q = look.bands > 0 ? Math.round(lum * look.bands) / look.bands : lum;
+  const k = Math.max(0, Math.min(1, q / 1.1));
+  const tint = mixRGB(rgb(look.shadowTint), rgb(look.lightTint), k);
+  const lightCol = lum > 0 ? ([L[0] / lum, L[1] / lum, L[2] / lum] as RGB) : ([1, 1, 1] as RGB);
+  const t = mixRGB([1, 1, 1], tint, look.tintStrength * (1 - k * 0.5));
+  return [base[0] * q * t[0] * (0.75 + 0.25 * lightCol[0]), base[1] * q * t[1] * (0.75 + 0.25 * lightCol[1]), base[2] * q * t[2] * (0.75 + 0.25 * lightCol[2])];
+}
+
 /** Final colour of a surface: albedo × light + emission, then height fog by distance. */
-export function shade(p: V3, n: V3, m: Material, lights: Light[], eye: V3, atmo: Atmosphere): string {
+export function shade(p: V3, n: V3, m: Material, lights: Light[], eye: V3, atmo: Atmosphere, look?: Look): string {
   const base = rgb(m.color);
-  const L = lightAt(p, n, lights);
   const occ = m.occlusion ?? 1;
-  let c: RGB = [base[0] * L[0] * occ, base[1] * L[1] * occ, base[2] * L[2] * occ];
+  let c: RGB;
+  if (m.kind === 'flat') {
+    c = base;
+  } else {
+    const L = scale(lightAt(p, n, lights), occ) as RGB;
+    let extra = 0;
+    if (m.kind === 'metal' || m.kind === 'glass' || m.kind === 'water') {
+      // a single stylized specular band toward the strongest directional light
+      const key = lights.find((l) => l.kind === 'directional') as Extract<Light, {kind: 'directional'}> | undefined;
+      if (key) {
+        const view = normalize(sub(eye, p));
+        const h = normalize(sub(view, normalize(key.dir)));
+        const spec = Math.max(0, dot(n, h));
+        extra = spec > 0.93 ? 0.6 : spec > 0.8 ? 0.2 : 0;
+      }
+    }
+    c = look ? stylize(base, L, look, extra) : [base[0] * L[0], base[1] * L[1], base[2] * L[2]];
+    if (m.kind === 'glass') c = mixRGB(c, rgb(atmo.high), 0.25);
+  }
   if (m.emissive) c = mixRGB(c, base, m.emissive);
   const fogCol = mixRGB(rgb(atmo.low), rgb(atmo.high), Math.max(0, Math.min(1, p[1] / atmo.height)));
   const f = 1 - Math.exp(-length(sub(p, eye)) * atmo.density);
@@ -188,6 +232,9 @@ export interface Poly {
   m: Material;
   /** Depth bias in metres (negative draws in front of coplanar polygons). */
   bias?: number;
+  /** Draw both sides (foliage, cutaway walls, thin panels). */
+  doubleSided?: boolean;
+  opacity?: number;
 }
 
 /** Axis-aligned quad helper from 4 corners (counter-clockwise seen from the normal side). */
