@@ -56,5 +56,10 @@ Without audio, timing is estimated from the text so you can preview before recor
 | `npm run render [-- <id>] [--long\|--short\|--thumb]` | Export to `out/` |
 | `npm run sync-audio` | Measure audio in `public/` so timing matches the voice-over |
 | `npm run typecheck` | TypeScript check |
+| `npm test` | Unit tests |
+| `npm run test:visual` | Visual regression against approved frames |
+| `npm run benchmark` | Render speed and memory benchmarks |
 
-See [PROJECT.md](PROJECT.md) for architecture, quality benchmarks and the roadmap.
+See [PROJECT.md](PROJECT.md), the single source of truth for architecture, visual direction, QC, benchmarks and the roadmap.
+
+Visual-direction prototypes: `Memory-A-Geometric`, `Memory-B-Textured`, `Memory-C-Cinematic` in the studio.

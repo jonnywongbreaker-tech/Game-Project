@@ -17,7 +17,7 @@ import {analyzeEpisode} from '../src/qc/analyze';
 import {compileScript} from '../src/script/compile';
 import {browserExecutable, bundleProject, getComposition, memoryMonitor} from './lib/remotion';
 
-const DEFAULT = ['Ep001-Long', 'Ep001-Short', 'StyleA-Geometric-Long', 'StyleB-Textured-Long', 'StyleC-Cinematic-Long'];
+const DEFAULT = ['Ep001-Long', 'Ep001-Short', 'Memory-A-Geometric-Long', 'Memory-B-Textured-Long', 'Memory-C-Cinematic-Long'];
 const args = process.argv.slice(2);
 const ids = args.filter((a) => !a.startsWith('--'));
 const concArg = args.find((a) => a.startsWith('--concurrency='));

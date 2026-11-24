@@ -19,9 +19,11 @@ const FRAMES: [string, number][] = [
   ['Ep001-Short', 330],
   ['Ep001-Thumb', 0],
   ['Ep002-Long', 560],
-  ['StyleA-Geometric-Long', 280],
-  ['StyleB-Textured-Long', 280],
-  ['StyleC-Cinematic-Long', 410],
+  ['Memory-A-Geometric-Long', 120],
+  ['Memory-A-Geometric-Long', 245],
+  ['Memory-B-Textured-Long', 245],
+  ['Memory-C-Cinematic-Long', 245],
+  ['Memory-C-Cinematic-Long', 390],
 ];
 const SCALE = 0.5;
 /** Fraction of pixels allowed to differ before a frame counts as changed. */
@@ -67,7 +69,7 @@ async function main() {
   }
 
   // Determinism: identical input must give identical pixels.
-  const [did, dframe] = ['StyleB-Textured-Long', 100];
+  const [did, dframe] = ['Memory-B-Textured-Long', 100];
   await render(did, dframe, join(outDir, 'det-1.png'));
   await render(did, dframe, join(outDir, 'det-2.png'));
   const det = diff(join(outDir, 'det-1.png'), join(outDir, 'det-2.png'));
