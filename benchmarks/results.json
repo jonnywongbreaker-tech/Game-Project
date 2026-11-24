@@ -82,14 +82,14 @@
         "beatsPerMinute": 19.7,
         "scriptBytesPerMinute": 2718,
         "qcWarnings": 0,
-        "manualSteps": "write script \u2192 npm run check \u2192 npm run render"
+        "manualSteps": "write script → npm run check → npm run render"
       },
       {
         "id": "Ep002",
         "beatsPerMinute": 15.2,
         "scriptBytesPerMinute": 2728,
         "qcWarnings": 0,
-        "manualSteps": "write script \u2192 npm run check \u2192 npm run render"
+        "manualSteps": "write script → npm run check → npm run render"
       }
     ]
   },
@@ -132,14 +132,14 @@
         "beatsPerMinute": 19.7,
         "scriptBytesPerMinute": 2718,
         "qcWarnings": 0,
-        "manualSteps": "write script \u2192 npm run check \u2192 npm run render"
+        "manualSteps": "write script → npm run check → npm run render"
       },
       {
         "id": "Ep002",
         "beatsPerMinute": 15.2,
         "scriptBytesPerMinute": 2728,
         "qcWarnings": 0,
-        "manualSteps": "write script \u2192 npm run check \u2192 npm run render"
+        "manualSteps": "write script → npm run check → npm run render"
       }
     ],
     "note": "StyleB with baked grain textures; rough filter on whole scene"
@@ -183,16 +183,99 @@
         "beatsPerMinute": 19.7,
         "scriptBytesPerMinute": 2718,
         "qcWarnings": 0,
-        "manualSteps": "write script \u2192 npm run check \u2192 npm run render"
+        "manualSteps": "write script → npm run check → npm run render"
       },
       {
         "id": "Ep002",
         "beatsPerMinute": 15.2,
         "scriptBytesPerMinute": 2728,
         "qcWarnings": 0,
-        "manualSteps": "write script \u2192 npm run check \u2192 npm run render"
+        "manualSteps": "write script → npm run check → npm run render"
       }
     ],
     "note": "experiment: StyleB with rough filter on the character only (background unfiltered)"
+  },
+  {
+    "date": "2026-11-24T22:21:34.718Z",
+    "machine": {
+      "platform": "linux x64",
+      "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+      "cores": 4,
+      "memoryGB": 16.9,
+      "node": "v22.23.5"
+    },
+    "bundleSeconds": 3.2,
+    "concurrency": "default",
+    "renders": [
+      {
+        "id": "Memory-A-Geometric-Long",
+        "resolution": "1920x1080",
+        "frames": 450,
+        "videoSeconds": 15,
+        "renderSeconds": 35,
+        "fps": 12.9,
+        "realtimeFactor": 2.33,
+        "tenMinuteVideoMinutes": 23.3,
+        "peakMemoryMB": 2222
+      },
+      {
+        "id": "Memory-B-Textured-Long",
+        "resolution": "1920x1080",
+        "frames": 450,
+        "videoSeconds": 15,
+        "renderSeconds": 105.2,
+        "fps": 4.3,
+        "realtimeFactor": 7.01,
+        "tenMinuteVideoMinutes": 70.1,
+        "peakMemoryMB": 2728
+      },
+      {
+        "id": "Memory-C-Cinematic-Long",
+        "resolution": "1920x1080",
+        "frames": 450,
+        "videoSeconds": 15,
+        "renderSeconds": 206.5,
+        "fps": 2.2,
+        "realtimeFactor": 13.77,
+        "tenMinuteVideoMinutes": 137.7,
+        "peakMemoryMB": 3587
+      },
+      {
+        "id": "Ep001-Long",
+        "resolution": "1920x1080",
+        "frames": 1283,
+        "videoSeconds": 42.766666666666666,
+        "renderSeconds": 68.6,
+        "fps": 18.7,
+        "realtimeFactor": 1.61,
+        "tenMinuteVideoMinutes": 16.1,
+        "peakMemoryMB": 1827
+      }
+    ],
+    "versatility": {
+      "castPresets": 5,
+      "poses": 8,
+      "expressions": 7,
+      "backdrops": 4,
+      "captionStyles": 3,
+      "visualStyles": 3,
+      "characterStates": 56
+    },
+    "automation": [
+      {
+        "id": "Ep001",
+        "beatsPerMinute": 19.7,
+        "scriptBytesPerMinute": 2718,
+        "qcWarnings": 0,
+        "manualSteps": "write script → npm run check → npm run render"
+      },
+      {
+        "id": "Ep002",
+        "beatsPerMinute": 15.2,
+        "scriptBytesPerMinute": 2728,
+        "qcWarnings": 0,
+        "manualSteps": "write script → npm run check → npm run render"
+      }
+    ]
   }
 ]

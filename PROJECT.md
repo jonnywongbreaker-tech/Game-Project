@@ -146,7 +146,7 @@ props[], actions[], camera: 'wide'|'medium'|'close'|..., onScreenText?, diagram?
 | `npm run typecheck` | TypeScript |
 | `npm test` | 28 unit tests: compiler validation and timing, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
 | `npm run check` | Compiles every script and runs QC: overlap, off-screen/cropped speakers (both formats), fast speech, long Shorts subtitles, short captions, line overlap, sliding walks, pose flicker, repeated gestures, repeated backdrops, pacing metrics |
-| `npm run test:visual` | Renders 12 key frames and compares them with approved goldens (per platform), plus a determinism re-render. `-- --update` approves a new look |
+| `npm run test:visual` | Renders 11 key frames and compares them with approved goldens (per platform), plus a determinism re-render. `-- --update` approves a new look |
 | `npm run benchmark` | Render speed, real-time factor, projected 10-minute render time, peak memory of the whole render process tree, versatility counts, authoring effort |
 
 **Not yet covered:** checks on rendered pixels (text contrast, clipping detected from
@@ -167,7 +167,19 @@ typically several times faster per core, but that is an estimate until measured.
 | Performance | See the table below |
 | Reusability | New JSON episodes need zero code. New *visual* actions still need code (roadmap 1.3) |
 
-BENCHMARK_TABLE
+Measured 2026-11-24 on a 4-core cloud Xeon, 1920×1080, Remotion default concurrency:
+
+| Composition | Render for 15 s | × real time | Projected 10-min video | Peak memory |
+| --- | --- | --- | --- | --- |
+| Default style (Ep001, 43 s) | 69 s | 1.6× | 16 min | 1.8 GB |
+| A · Geometric | 35 s | 2.3× | 23 min | 2.2 GB |
+| B · Textured | 105 s | 7.0× | 70 min | 2.7 GB |
+| C · Cinematic | 207 s | 13.8× | 138 min | 3.6 GB |
+
+All four fit comfortably in 24 GB. C's cost is dominated by blur filters (depth of
+field, bloom, soft shadows); B's by per-frame ink jitter on ~1,000 shapes. Both have
+known optimisations (cache static layers as images, pre-blurred sprites, jitter
+only on the stage layer) that are deferred until the look is locked.
 
 ## 9. Known limitations
 
