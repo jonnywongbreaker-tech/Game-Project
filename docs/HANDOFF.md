@@ -1,6 +1,6 @@
 # Session handoff (start a new chat from here)
 
-**Repo:** `jonnywongbreaker-tech/Game-Project`, branch `claude/charming-hawking-nqz0dw` (all work pushed).
+**Repo:** `jonnywongbreaker-tech/Game-Project`, branch `claude/gifted-hopper-gfi4vc` (all work pushed).
 **Read first:** `PROJECT.md` (single source of truth), then `docs/RENDERER_ASSESSMENT.md`, `docs/SHOT_GRAMMAR.md` and `docs/SCRIPT_FORMAT.md`.
 
 ## What this is
@@ -14,6 +14,7 @@ A code-driven 2D/2.5D animation engine (Remotion + React + TypeScript + SVG) for
    - Look system (banded light, cool-shadow/warm-light tints, stylized materials, less haze).
    - Person v2 character system and a procedural cast.
    - Four versatility scenes: urban, mechanical cutaway, natural, abstract.
+   - Person v2 front and back views (chosen automatically from the camera angle) and a 10-expression set as data; review sheet `Character-Turnaround`.
    - Semantic shot grammar.
    - Three.js comparison spike. Recommendation: no rewrite; an optional hybrid environment layer, used only if a trigger fires.
 
@@ -27,16 +28,16 @@ A code-driven 2D/2.5D animation engine (Remotion + React + TypeScript + SVG) for
 - No reference PDF was ever received; the owner said to proceed without it.
 
 ## Open questions for the owner
-- Do the four versatility scenes and Person v2 meet the bar? What should change?
+- Do the four versatility scenes and Person v2 (including the new views and expressions in `Character-Turnaround`) meet the bar? What should change?
 - Accept the hybrid renderer recommendation? (Measure the GPU first: `npx tsx scripts/spike-three.ts 60 angle` on the Mac mini.)
 
 ## Next steps (roadmap, see PROJECT.md §10)
-1. **Character:** front and back views and an expression set, then review and lock Person v2.
+1. **Character:** three-quarter front view, animated turns and expression blends, then review and lock Person v2.
 2. **Shot grammar:** a named-subject registry per scene, camera collision and occlusion avoidance, composition rules.
 3. **Renderer decision** after the Mac mini GPU measurement.
 4. **Then:** voice pipeline (TTS + alignment + visemes), a diagram/chart library, the AI director (storyboard IR → shots and actions).
 
 ## Commands
 `npm run studio` · `npm test` · `npm run check` · `npm run test:visual` (`-- --update` to approve a new look) · `npm run benchmark -- <Composition>` · `npm run render -- <id>`
-Key compositions: `V-Urban`, `V-Machine`, `V-Nature`, `V-Abstract`, `Character-Sheet`, `Memory-v3-CinematicGeometric`, `Spike-ThreeAtrium`.
+Key compositions: `V-Urban`, `V-Machine`, `V-Nature`, `V-Abstract`, `Character-Sheet`, `Character-Turnaround`, `Memory-v3-CinematicGeometric`, `Spike-ThreeAtrium`.
 Environment gotcha: render one Remotion process at a time in the cloud container (parallel renders can hang).

@@ -23,7 +23,7 @@ theme and asset kits retargets the engine.
 | Concept visuals | Network kit in 2D and 3D (grow, recall wave, persistent glow, fade, dissolve), particle bursts. Charts/diagrams library not built yet |
 | Cinematography | Shot sequencer + **semantic shot grammar** (establishing, closeUp, objectReveal, tracking, cutaway, scaleTransition); see `docs/SHOT_GRAMMAR.md` |
 | Look system | Shared identity (`src/themes/cge/identity.ts`): banded light, cool-shadow and warm-light tints, matte/metal/glass/water materials, low coloured haze, planar cast shadows |
-| Characters | **Person v2** (`src/themes/cge/Person.tsx`): faceted design system, proper hands, procedural cast variation; the Archivist is one preset. NOT locked |
+| Characters | **Person v2** (`src/themes/cge/Person.tsx`): faceted design system, proper hands, procedural cast variation; the Archivist is one preset. **Front, profile and back views** chosen automatically from the camera angle; **10 data-driven expressions** (`face.ts`). NOT locked |
 | Renderer | SVG Space renderer kept; Three.js evaluated with a measured spike; hybrid recommended (`docs/RENDERER_ASSESSMENT.md`) |
 | QC | Static QC (composition, readability, sync, movement, repetition, pacing), unit tests, visual regression, determinism, benchmarks |
 | Automation | Director / storyboard stage designed (section 5), not built |
@@ -133,7 +133,7 @@ Composition `Memory-v3-CinematicGeometric` (18 s, four shots), built with the ne
 
 ## 3.2 Versatility benchmark + Person v2 (awaiting review)
 
-Four 5-second scenes plus a character design sheet, all in one identity and built only from reusable kits. Compositions: `V-Urban`, `V-Machine`, `V-Nature`, `V-Abstract`, `Character-Sheet`.
+Four 5-second scenes plus two character design sheets, all in one identity and built only from reusable kits. Compositions: `V-Urban`, `V-Machine`, `V-Nature`, `V-Abstract`, `Character-Sheet`, `Character-Turnaround`.
 
 | Scene | Subject / light | Shots (semantic grammar) | Engine capabilities |
 | --- | --- | --- | --- |
@@ -157,8 +157,15 @@ Four 5-second scenes plus a character design sheet, all in one identity and buil
 - **Variation:** height, build, skin, hair and palette, plus a bag.
 - **Presets and crowds:** `randomPerson(seed)` produces a consistent, varied cast; the Archivist is a preset.
 
+**Views and expressions (round 2, awaiting review; `Character-Turnaround`):**
+- **Front and back views** alongside the profile. The rig takes a `view` (`src/kit/puppet.ts`): seen from the front, forward reaches land just inside the shoulders, feet stand side by side and a stride shows as lift, and a forward lean no longer rolls the torso.
+- **Automatic view choice:** `chooseView()` shows the front or back when the character faces within about 40° of the camera axis, otherwise the profile. `personSprite` applies it per frame, so the urban crowd walking along the street now shows faces and backs. A `view` on the placement overrides it.
+- **Expression set as data** (`src/themes/cge/face.ts`): neutral, smile, laugh, content, wonder, concern, sad, angry, thinking, determined. Each is brow (lift, inner angle), eye (opening, cheek squint, gaze) and mouth (width, curve, opening, skew). The same data drives the profile and front faces.
+- **Front design:** symmetric faceted head with a jaw facet on the shadow side, a nose wedge, two almond eyes, ears for short hairstyles; lapels, collar, scarf wrap, bag strap; half-body shading from the key-light side. **Back design:** hair masses per hairstyle, coat vent and collar.
+
 **Known weaknesses (for the next round):**
-- **Views:** profile/three-quarter only. No front or back views, so characters can't face the camera.
+- **Views:** no three-quarter front yet (the jump profile → front is a cut, with no turn in between); the key-light side for front views is a fixed default, not derived from the scene lights; held props need front-view attachment points.
+- **Expressions:** no transitions between expressions yet (they switch), and talking is still a two-frame mouth flap (visemes come with the voice pipeline).
 - **Mid-shot blocks:** in the abstract scene, blocks close to the camera are large mid-transition.
 - **Terrain facets:** large near-camera terrain facets read as flat.
 - **Composition checks:** the camera is not yet automatically kept out of geometry or occluders; the director must pick safe parameters (see `docs/SHOT_GRAMMAR.md`).
@@ -228,9 +235,9 @@ props[], actions[], camera: 'wide'|'medium'|'close'|..., onScreenText?, diagram?
 | Command | What it covers |
 | --- | --- |
 | `npm run typecheck` | TypeScript |
-| `npm test` | 41 unit tests: compiler validation and timing, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
+| `npm test` | 44 unit tests: compiler validation and timing, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
 | `npm run check` | Compiles every script and runs QC: overlap, off-screen/cropped speakers (both formats), fast speech, long Shorts subtitles, short captions, line overlap, sliding walks, pose flicker, repeated gestures, repeated backdrops, pacing metrics |
-| `npm run test:visual` | Renders 19 key frames and compares them with approved goldens (per platform), plus a determinism re-render. `-- --update` approves a new look |
+| `npm run test:visual` | Renders 20 key frames and compares them with approved goldens (per platform), plus a determinism re-render. `-- --update` approves a new look |
 | `npm run benchmark` | Render speed, real-time factor, projected 10-minute render time, peak memory of the whole render process tree, versatility counts, authoring effort |
 
 **Not yet covered:** checks on rendered pixels (text contrast, clipping detected from
@@ -277,7 +284,7 @@ only on the stage layer) that are deferred until the look is locked.
 - **Choreography of rich scenes is hand-keyed** (prototype `scene.ts`); the JSON format only exposes walk/pose/expression/emote/camera.
 - **Default style (Ep001/Ep002) predates the theme contract** and uses the older rig. Port it once the visual direction is locked.
 - **Lip sync** is generic mouth flapping; word timing is estimated unless real audio is synced per line.
-- **Characters have one view** (¾); no turnarounds, hands are simple circles.
+- **Character views** are front, profile and back with hard switches; no three-quarter front or animated turns yet. The default style (Ep001) still has one view.
 - **No rendered-pixel QC yet:** text contrast and real clipping are not machine-checked.
 - **Render cost of style C/B** is high (blur filters; per-frame ink jitter). Optimisation is deliberately deferred until the look is locked.
 - Visual goldens are platform-specific; regenerate on each machine (`npm run test:visual -- --update`).
@@ -289,7 +296,7 @@ Ranked by visual impact × scalability ÷ effort, respecting dependencies.
 | # | Item | Impact | Scalability | Effort | Depends on |
 | --- | --- | --- | --- | --- | --- |
 | 0 | ~~Choose visual direction~~ → Cinematic Geometric Editorial. **Approve benchmark v3** (section 3.1) | ★★★ | ★★★ | S | You |
-| 0.5 | Character design: front and back views, expression set, review Person v2, then lock | ★★★ | ★★★ | M | 0 |
+| 0.5 | Character design: ~~front and back views, expression set~~ (done, awaiting review). Next: three-quarter front, animated turns and expression blends; then lock Person v2 | ★★★ | ★★★ | M | 0 |
 | 0.6 | ~~Shot grammar~~ (done). Next: subject registry, camera collision/occlusion avoidance, composition rules | ★★★ | ★★★ | M | — |
 | 0.7 | Renderer decision: measure the Three.js spike on the Mac mini GPU; adopt the hybrid environment layer only if a trigger fires | ★★ | ★★★ | S | Mac mini run |
 | 1.1 | Light rig as scene data, consumed by the locked theme | ★★★ | ★★ | M | 0 |

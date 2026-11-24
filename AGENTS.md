@@ -25,7 +25,7 @@ npm run studio           # interactive preview of every composition
 - `src/prototypes/memory`: v2 style benchmark; `src/prototypes/memory3`: v3 four-shot benchmark (current)
 - `src/engine/Space.tsx`: 3D renderer (polygons + sprites, depth sort, depth of field)
 - `src/kit/{primitives,city,mechanics,terrain,formation,crowd,shotGrammar}.ts`: reusable scene and shot kits
-- `src/prototypes/versatility`: four versatility scenes + character sheet; `src/themes/cge/{identity,Person,personSprite}`: shared look and Person v2
+- `src/prototypes/versatility`: four versatility scenes + two character sheets (design, views/expressions); `src/themes/cge/{identity,Person,face,personSprite}`: shared look, Person v2 and its expression data
 - `src/spikes/ThreeAtrium.tsx` + `scripts/spike-three.ts`: Three.js comparison spike (evaluation only)
 
 ## Open review requests

@@ -9,7 +9,10 @@ import {cameraAt} from '../src/kit/shots';
 import {length, rgb, stylize, sub} from '../src/kit/space';
 import {scatter} from '../src/kit/terrain';
 import {LOOK} from '../src/themes/cge/identity';
-import {randomPerson} from '../src/themes/cge/Person';
+import {blendedArms} from '../src/engine/rig';
+import {chooseView, solvePuppet} from '../src/kit/puppet';
+import {FACES} from '../src/themes/cge/face';
+import {PERSON_EXPRESSIONS, PERSON_PROPORTIONS, randomPerson} from '../src/themes/cge/Person';
 
 test('stylized shading: light is banded and shadows lean cool', () => {
   const grey = rgb('#808080');
@@ -70,4 +73,34 @@ test('procedural variety: buildings and people differ by seed, deterministically
   const specs = Array.from({length: 12}, (_, i) => randomPerson(`p${i}`));
   assert.ok(new Set(specs.map((s) => `${s.outfit}-${s.hair}-${s.top}`)).size >= 8, 'a crowd is varied');
   assert.equal(scatter(20, [0, 10], [0, 10], 's', (x) => x > 5).every(([x]) => x > 5), true);
+});
+
+test('view choice: front within the camera cone, back when facing away, profile otherwise', () => {
+  assert.equal(chooseView([0, 1], [0, 5]), 'front');
+  assert.equal(chooseView([0, 1], [0.3, -5]), 'back');
+  assert.equal(chooseView([1, 0], [0, 5]), 'profile');
+  assert.equal(chooseView([0.5, 1], [0, 5]), 'front', '~27° off axis still reads as front');
+});
+
+test('frontal rig: feet side by side, forward reach stays inside the shoulders, no lean roll', () => {
+  const base = {t: 1, arms: blendedArms('idle', 1), walking: false, walkPhase: 0, lean: 8};
+  const f = solvePuppet({...base, view: 'front'}, PERSON_PROPORTIONS);
+  assert.ok(f.foot.l[0] < 0 && f.foot.r[0] > 0, 'feet on either side of the centre line');
+  assert.equal(f.torsoAngle, 0, 'a forward lean is toward the camera, not a roll');
+  const reach = solvePuppet({...base, view: 'front', ik: {r: {target: [90, -300], weight: 1}}}, PERSON_PROPORTIONS);
+  assert.ok(Math.abs(reach.hand.r[0]) < PERSON_PROPORTIONS.shoulderW + 1, 'forward target maps inside the shoulder line');
+  const p = solvePuppet({...base, view: 'profile'}, PERSON_PROPORTIONS);
+  assert.ok(p.torsoAngle > 0);
+});
+
+test('every expression has face data with sane ranges', () => {
+  assert.ok(PERSON_EXPRESSIONS.length >= 10);
+  for (const e of PERSON_EXPRESSIONS) {
+    const f = FACES[e];
+    assert.ok(f.eye.open > 0 && f.eye.open <= 1.4, e);
+    assert.ok(f.eye.cheek >= 0 && f.eye.cheek <= 1, e);
+    assert.ok(f.mouth.width > 0 && f.mouth.open >= 0, e);
+  }
+  assert.ok(FACES.smile.mouth.curve > 0 && FACES.sad.mouth.curve < 0, 'smile up, sad down');
+  assert.ok(FACES.angry.brow.inner > 0 && FACES.concern.brow.inner < 0, 'anger drops the inner brow, worry raises it');
 });

@@ -32,6 +32,7 @@ const FRAMES: [string, number][] = [
   ['V-Nature-Long', 120],
   ['V-Abstract-Long', 140],
   ['Character-Sheet-Long', 20],
+  ['Character-Turnaround-Long', 20],
 ];
 const SCALE = 0.5;
 /** Fraction of pixels allowed to differ before a frame counts as changed. */

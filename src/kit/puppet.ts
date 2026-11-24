@@ -9,6 +9,12 @@ import {type Arms, solveIK} from '../engine/rig';
 
 export type Vec = [number, number];
 
+/**
+ * Which side of the character the camera sees. Profile joints use x = forward;
+ * front and back joints use x = lateral (screen right when seen from the front).
+ */
+export type View = 'profile' | 'front' | 'back';
+
 export interface Proportions {
   hipY: number;
   shoulderY: number;
@@ -50,6 +56,8 @@ export interface PuppetInput {
   /** Forward speed in units/s — drives secondary motion (hair, clothing). */
   velocity?: number;
   seed?: number;
+  /** Camera-relative view. Front/back remap forward motion (reach, stride) onto the picture plane. */
+  view?: View;
 }
 
 export interface Joints {
@@ -102,7 +110,9 @@ export const toLocal = (world: Vec, x: number, groundY: number, facing: 1 | -1):
 export const toWorld = (local: Vec, x: number, groundY: number, facing: 1 | -1): Vec => [x + local[0] * facing, groundY + local[1]];
 
 export function solvePuppet(i: PuppetInput, P: Proportions = DEFAULT_PROPORTIONS): Joints {
-  const lean = i.lean ?? 0;
+  const frontal = i.view === 'front' || i.view === 'back';
+  // Seen from the front, a forward lean points at the camera: no visible roll.
+  const lean = frontal ? 0 : i.lean ?? 0;
   const crouch = i.crouch ?? 0;
   const p = i.walkPhase;
   const seed = i.seed ?? 0;
@@ -123,14 +133,14 @@ export function solvePuppet(i: PuppetInput, P: Proportions = DEFAULT_PROPORTIONS
   if (i.lookAt) {
     const d: Vec = [i.lookAt[0] - headBase[0], i.lookAt[1] - headBase[1]];
     const len = Math.hypot(d[0], d[1]) || 1;
-    headTilt += clamp((Math.atan2(d[1], Math.max(20, d[0])) * 180) / Math.PI * 0.35, -16, 16);
+    headTilt += frontal ? clamp(d[0] * 0.02, -6, 6) : clamp((Math.atan2(d[1], Math.max(20, d[0])) * 180) / Math.PI * 0.35, -16, 16);
     pupil = [(d[0] / len) * 5, (d[1] / len) * 4];
   }
   const head = headBase;
 
   // ---- Arms: base pose (relative to the torso) blended with IK.
   const shoulder = {l: add(chest, rot([-P.shoulderW, 12], lean)), r: add(chest, rot([P.shoulderW, 12], lean))};
-  const swing = i.walking ? Math.sin(2 * Math.PI * p) * 20 : 0;
+  const swing = i.walking ? Math.sin(2 * Math.PI * p) * (frontal ? 4 : 20) : 0;
   const base = {
     l: [i.arms.l[0] + lean + swing, i.arms.l[1]] as [number, number],
     r: [i.arms.r[0] - lean + swing, i.arms.r[1]] as [number, number],
@@ -142,8 +152,10 @@ export function solvePuppet(i: PuppetInput, P: Proportions = DEFAULT_PROPORTIONS
     let angles = base[side];
     const ik = i.ik?.[side];
     if (ik && ik.weight > 0) {
-      const outward = (ik.target[0] - root[0]) * s;
-      const solved = solveIK(root, ik.target, lengths, s, outward >= 0 ? -1 : 1);
+      // Front/back: a target in front of the body sits just inside the shoulder line.
+      const target: Vec = frontal ? [s * P.shoulderW * 0.45, ik.target[1]] : ik.target;
+      const outward = (target[0] - root[0]) * s;
+      const solved = solveIK(root, target, lengths, s, outward >= 0 ? -1 : 1);
       angles = [lerp(angles[0], solved[0], ik.weight), lerp(angles[1], solved[1], ik.weight)];
     }
     const a1 = rad(angles[0]);
@@ -166,8 +178,19 @@ export function solvePuppet(i: PuppetInput, P: Proportions = DEFAULT_PROPORTIONS
     const foot: Vec = [knee[0] + Math.sin(rad(a + b)) * P.shin, knee[1] + Math.cos(rad(a + b)) * P.shin];
     return {knee, foot};
   };
-  const LL = leg(hip.l, fl.pos);
-  const RL = leg(hip.r, fr.pos);
+  // Front/back: feet sit side by side; stride depth shows as a small height shift and the lift.
+  const frontLeg = (h: Vec, f: {pos: Vec}, side: 1 | -1) => {
+    const foot: Vec = [side * (P.hipW + 6), f.pos[1] * 0.8 + f.pos[0] * 0.05 * (i.view === 'back' ? -1 : 1)];
+    const u = P.thigh / (P.thigh + P.shin);
+    const knee: Vec = [h[0] + (foot[0] - h[0]) * u + side * 2, h[1] + (foot[1] - h[1]) * u];
+    return {knee, foot};
+  };
+  if (frontal) {
+    hip.l = add(pelvis, [-(P.hipW + 4), 0]);
+    hip.r = add(pelvis, [P.hipW + 4, 0]);
+  }
+  const LL = frontal ? frontLeg(hip.l, fl, -1) : leg(hip.l, fl.pos);
+  const RL = frontal ? frontLeg(hip.r, fr, 1) : leg(hip.r, fr.pos);
 
   const hairSwing = clamp(-(i.velocity ?? 0) * 0.035, -28, 28) + Math.sin(i.t * 1.7 + seed) * 3 + (i.walking ? Math.sin(4 * Math.PI * p) * 4 : 0);
 
@@ -177,4 +200,20 @@ export function solvePuppet(i: PuppetInput, P: Proportions = DEFAULT_PROPORTIONS
     hip, knee: {l: LL.knee, r: RL.knee}, foot: {l: LL.foot, r: RL.foot},
     footLift: {l: fl.lift, r: fr.lift}, hairSwing, breath,
   };
+}
+
+/**
+ * Pick the view a camera should see. `heading` is the character's facing and
+ * `toCamera` the direction from the character to the camera, both on the ground
+ * plane ([x, z]). Within ~40° of the camera axis the front or back is shown.
+ */
+export function chooseView(heading: Vec, toCamera: Vec, cone = 0.76): View {
+  const n = (v: Vec) => {
+    const l = Math.hypot(v[0], v[1]) || 1;
+    return [v[0] / l, v[1] / l];
+  };
+  const [hx, hz] = n(heading);
+  const [cx, cz] = n(toCamera);
+  const d = hx * cx + hz * cz;
+  return d > cone ? 'front' : d < -cone ? 'back' : 'profile';
 }

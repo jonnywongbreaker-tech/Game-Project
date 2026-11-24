@@ -7,13 +7,16 @@
  */
 import React from 'react';
 import {random} from 'remotion';
-import type {Joints, Proportions, Vec} from '../../kit/puppet';
+import type {Joints, Proportions, Vec, View} from '../../kit/puppet';
 import {hex, type Look, rgb, type RGB, stylize} from '../../kit/space';
+import {type Expression, FACES, type FaceParams, TALK_OPEN} from './face';
+
+export type {Expression} from './face';
+export {PERSON_EXPRESSIONS} from './face';
 
 export type Outfit = 'coat' | 'jacket' | 'sweater' | 'dress';
 export type Hair = 'bob' | 'short' | 'bun' | 'long' | 'beanie';
 export type HandPose = 'relaxed' | 'hold' | 'open';
-export type Expression = 'neutral' | 'wonder' | 'content' | 'concern' | 'smile';
 
 export interface PersonSpec {
   outfit: Outfit;
@@ -166,9 +169,50 @@ export interface PersonProps {
   t: number;
   talking?: boolean;
   held?: {at: Vec; render: () => React.ReactNode};
+  /** Camera-relative view; the joints must be solved for the same view. */
+  view?: View;
 }
 
-export const Person: React.FC<PersonProps> = ({spec, j, facing, scale, x, y, light, look, keySide = 1, rim, expression = 'neutral', hands, velocity = 0, t, talking, held}) => {
+const INK = '#1D1820';
+const LIP = '#3A1F22';
+const eyeOpen = (f: FaceParams) => Math.max(0.12, f.eye.open * (1 - f.eye.cheek * 0.55));
+
+/** Almond eye with lid line; `cheek` adds the smiling lower lid. Eye frame: centre at 0. */
+const Eye: React.FC<{k: number; cheek: number; pupil: Vec; w?: number}> = ({k, cheek, pupil, w = 8}) => (
+  <g>
+    <g transform={`scale(1 ${k})`}>
+      <path d={`M ${-w} 0 Q 0 ${-w * 0.88} ${w} 0 Q 0 ${w * 0.5} ${-w} 0 Z`} fill="#F4EEE6" />
+      {k > 0.2 && <circle cx={pupil[0]} cy={pupil[1]} r={w * 0.45} fill={INK} />}
+    </g>
+    <path d={`M ${-w - 1} ${-0.5} Q 0 ${-w * k - 1} ${w + 1} ${-0.5}`} stroke={INK} strokeWidth={2.6} fill="none" strokeLinecap="round" />
+    {cheek > 0.3 && <path d={`M ${-w * 0.8} ${w * 0.55} Q 0 ${w * 0.1} ${w * 0.8} ${w * 0.55}`} stroke={INK} strokeWidth={1.6} fill="none" strokeLinecap="round" opacity={0.45} />}
+  </g>
+);
+
+/** Mouth from expression data, centred at (cx, cy). */
+const Mouth: React.FC<{cx: number; cy: number; m: FaceParams['mouth']}> = ({cx, cy, m}) => {
+  const k = m.skew ?? 0;
+  const y0 = cy + (m.y ?? 0);
+  const L: Vec = [cx - m.width + k * 2, y0 - m.curve + k * 1.6];
+  const R: Vec = [cx + m.width + k * 2, y0 - m.curve - k * 1.6];
+  const mid = cx + k * 2.5;
+  if (m.open < 0.6) return <path d={`M ${L[0]} ${L[1]} Q ${mid} ${y0 + m.curve} ${R[0]} ${R[1]}`} stroke={LIP} strokeWidth={2.5} fill="none" strokeLinecap="round" />;
+  const top = y0 + m.curve * 0.4 - m.open * 0.15;
+  const bottom = y0 + m.curve + m.open * 1.6;
+  return (
+    <g>
+      <path d={`M ${L[0]} ${L[1]} Q ${mid} ${top} ${R[0]} ${R[1]} Q ${mid} ${bottom} ${L[0]} ${L[1]} Z`} fill={LIP} />
+      {m.open > 4 && <ellipse cx={mid} cy={(top + bottom) / 2 + m.open * 0.35} rx={m.width * 0.5} ry={m.open * 0.28} fill="#A8494A" />}
+    </g>
+  );
+};
+
+export const Person: React.FC<PersonProps> = (props) => {
+  if (props.view === 'front' || props.view === 'back') return <PersonFrontal {...props} />;
+  return <PersonProfile {...props} />;
+};
+
+const PersonProfile: React.FC<PersonProps> = ({spec, j, facing, scale, x, y, light, look, keySide = 1, rim, expression = 'neutral', hands, velocity = 0, t, talking, held}) => {
   const lit = (c: string) => hex(stylize(rgb(c), light, look));
   const shd = (c: string) => hex(stylize(rgb(c), [light[0] * 0.5, light[1] * 0.5, light[2] * 0.52], look));
   const back = keySide === 1 ? -1 : 1;
@@ -212,21 +256,16 @@ export const Person: React.FC<PersonProps> = ({spec, j, facing, scale, x, y, lig
   };
   const body = outfitShape[spec.outfit];
   const half = (pts: Vec[]) => pts.map(([px, py]) => [back < 0 ? Math.min(px, -2) : Math.max(px, 2), py] as Vec);
-  const longLegs = spec.outfit === 'dress' ? false : true;
 
-  const mouth =
-    talking && Math.floor(t * 8) % 2 === 0 ? <path d={P([[36, 22], [44, 21], [43, 27], [37, 27]])} fill="#3A1F22" />
-    : expression === 'smile' || expression === 'content' ? <path d="M 34 22 Q 40 27 45 21" stroke="#3A1F22" strokeWidth={2.6} fill="none" strokeLinecap="round" />
-    : expression === 'wonder' ? <ellipse cx={40} cy={24} rx={3} ry={3.6} fill="#3A1F22" />
-    : <path d="M 35 24 L 44 23" stroke="#3A1F22" strokeWidth={2.4} strokeLinecap="round" />;
-  const browRot = expression === 'concern' ? 10 : expression === 'wonder' ? -8 : 0;
-  const browLift = expression === 'wonder' ? -4 : 0;
-  const eyeK = blinkOn ? 0.12 : expression === 'content' ? 0.2 : 1;
+  const face = FACES[expression];
+  const mouthP = talking && Math.floor(t * 8) % 2 === 0 ? TALK_OPEN : face.mouth;
+  const eyeK = blinkOn ? 0.1 : eyeOpen(face);
+  const gaze = face.eye.gaze ?? [0, 0];
 
   return (
     <g transform={`translate(${x} ${y}) scale(${scale * facing} ${scale})`}>
       {/* back leg, back arm */}
-      {longLegs || true ? <path d={taper([j.hip.l, j.knee.l, j.foot.l], 30 * hb, 18)} fill={shd(spec.legs)} /> : null}
+      <path d={taper([j.hip.l, j.knee.l, j.foot.l], 30 * hb, 18)} fill={shd(spec.legs)} />
       {shoe(j.foot.l, j.footLift.l, false)}
       <path d={taper([j.shoulder.l, j.elbow.l, j.hand.l], 27 * hb, 19)} fill={shd(spec.outfit === 'dress' ? spec.skin : spec.top)} />
       {hand(j.elbow.l, j.hand.l, hands?.l ?? 'relaxed', false)}
@@ -277,15 +316,13 @@ export const Person: React.FC<PersonProps> = ({spec, j, facing, scale, x, y, lig
         <path d={P(back < 0 ? HEAD_SHADOW : S(HEAD_SHADOW, 1).map(([a, b]) => [-a * 0.2 + 30, b] as Vec))} fill={shd(spec.skin)} opacity={0.6} />
         <path d={P(NOSE_SHADE)} fill={shd(spec.skin)} />
         {hair.ear && <path d={P([[-8, -6], [2, -8], [5, 8], [-4, 12], [-10, 4]])} fill={shd(spec.skin)} />}
-        <g transform={`translate(0 ${browLift})`}>
-          <path d={P(BROW)} fill={hex(stylize(rgb(spec.hairColor), light, look))} transform={`rotate(${browRot} 28 -17)`} />
+        <g transform={`translate(0 ${face.brow.lift})`}>
+          <path d={P(BROW)} fill={hex(stylize(rgb(spec.hairColor), light, look))} transform={`rotate(${face.brow.inner} 28 -17)`} />
         </g>
-        <g transform={`translate(28 -5) scale(1 ${eyeK})`}>
-          <path d="M -8 0 Q 0 -7 8 0 Q 0 4 -8 0 Z" fill="#F4EEE6" />
-          <circle cx={1.5 + j.pupil[0] * 0.5} cy={j.pupil[1] * 0.4} r={3.6} fill="#1D1820" />
-          <path d="M -9 -0.5 Q 0 -8 9 -0.5" stroke="#1D1820" strokeWidth={2.6} fill="none" strokeLinecap="round" />
+        <g transform="translate(28 -5)">
+          <Eye k={eyeK} cheek={face.eye.cheek} pupil={[1.5 + j.pupil[0] * 0.5 + gaze[0] * 3, j.pupil[1] * 0.4 + gaze[1] * 2.5]} />
         </g>
-        {mouth}
+        <Mouth cx={40} cy={24} m={{...mouthP, width: mouthP.width * 0.85}} />
         <path d={P(hair.front)} fill={lit(spec.hairColor)} />
         <path d={P(hair.shade)} fill={shd(spec.hairColor)} />
         {rim && rim.strength > 0.02 && <path d="M 46 -4 L 55 10 L 46 14 L 46 22 L 42 31" stroke={rim.color} strokeWidth={2.5} fill="none" strokeLinejoin="round" opacity={Math.min(0.8, rim.strength)} />}
@@ -297,6 +334,205 @@ export const Person: React.FC<PersonProps> = ({spec, j, facing, scale, x, y, lig
       <path d={taper([j.shoulder.r, j.elbow.r, j.hand.r], 27 * hb, 19)} fill={lit(spec.outfit === 'dress' ? spec.skin : spec.top)} />
       <path d={taper([j.elbow.r, j.hand.r], 16, 12)} fill={shd(spec.outfit === 'dress' ? spec.skin : spec.top)} opacity={0.4} />
       {hand(j.elbow.r, j.hand.r, hands?.r ?? 'relaxed', true)}
+    </g>
+  );
+};
+
+// ---------------------------------------------------------------- front and back views (x = screen right)
+const HEAD_F: Vec[] = [[-22, -48], [0, -52], [22, -48], [38, -32], [43, -8], [41, 12], [34, 29], [19, 41], [0, 46], [-19, 41], [-34, 29], [-41, 12], [-43, -8], [-38, -32]];
+/** Jaw/cheek facet on the shadow side (drawn for x < 0, mirrored for the other side). */
+const HEAD_F_SHADE: Vec[] = [[-43, -8], [-41, 12], [-34, 29], [-19, 41], [0, 46], [-5, 37], [-19, 27], [-29, 10], [-33, -9]];
+const NOSE_F: Vec[] = [[0, -6], [6, 15], [0, 18], [-3, 15]];
+const EAR_F: Vec[] = [[40, -6], [48, -5], [49, 9], [41, 14]];
+const m = (pts: Vec[]): Vec[] => pts.map(([a, b]) => [-a, b] as Vec);
+const HAIR_FRONT: Record<Hair, {front: Vec[]; behind?: Vec[]; back: Vec[]; ear: boolean}> = {
+  bob: {
+    front: [[-50, 34], [-54, -10], [-42, -44], [-18, -59], [12, -59], [38, -46], [52, -14], [51, 34], [39, 34], [40, -2], [33, -26], [12, -33], [-12, -25], [-32, -15], [-39, 4], [-39, 34]],
+    back: [[-51, 30], [-54, -10], [-42, -44], [-18, -59], [18, -59], [42, -44], [54, -10], [51, 30], [34, 38], [0, 41], [-34, 38]],
+    ear: false,
+  },
+  short: {
+    front: [[-44, -2], [-46, -30], [-30, -52], [0, -58], [30, -52], [46, -30], [44, -2], [40, -22], [22, -35], [0, -38], [-22, -35], [-40, -22]],
+    back: [[-46, 8], [-46, -30], [-30, -52], [0, -58], [30, -52], [46, -30], [46, 8], [30, 20], [-30, 20]],
+    ear: true,
+  },
+  bun: {
+    front: [[-44, -2], [-46, -30], [-30, -52], [0, -58], [30, -52], [46, -30], [44, -2], [40, -22], [18, -36], [0, -32], [-18, -36], [-40, -22]],
+    behind: [[-17, -54], [-15, -76], [0, -82], [15, -76], [17, -54]],
+    back: [[-46, 4], [-46, -30], [-30, -52], [0, -58], [30, -52], [46, -30], [46, 4], [24, 16], [-24, 16]],
+    ear: true,
+  },
+  long: {
+    front: [[-50, 34], [-54, -10], [-42, -44], [-18, -59], [12, -59], [38, -46], [52, -14], [51, 34], [39, 34], [40, -2], [33, -26], [12, -33], [-12, -25], [-32, -15], [-39, 4], [-39, 34]],
+    behind: [[-52, -10], [-60, 100], [-34, 106], [34, 106], [60, 100], [52, -10]],
+    back: [[-52, -10], [-54, -30], [-40, -50], [0, -59], [40, -50], [54, -30], [52, -10], [60, 100], [34, 106], [-34, 106], [-60, 100]],
+    ear: false,
+  },
+  beanie: {
+    front: [[-48, -6], [-45, -44], [-22, -64], [22, -64], [45, -44], [48, -6], [44, -14], [-44, -14]],
+    back: [[-48, 6], [-45, -44], [-22, -64], [22, -64], [45, -44], [48, 6], [28, 16], [-28, 16]],
+    ear: true,
+  },
+};
+
+const PersonFrontal: React.FC<PersonProps> = ({spec, j, facing, scale, x, y, light, look, keySide = 1, expression = 'neutral', hands, t, talking, held, view}) => {
+  const lit = (c: string) => hex(stylize(rgb(c), light, look));
+  const shd = (c: string) => hex(stylize(rgb(c), [light[0] * 0.5, light[1] * 0.5, light[2] * 0.52], look));
+  const isBack = view === 'back';
+  /** Local side in shadow (-1 = local left); keySide 1 lights local +x. */
+  const dark = -keySide as 1 | -1;
+  const tone = (side: number) => (side === dark ? shd : lit);
+  const hb = spec.build;
+  const sh = 30 * hb;
+  const hem = Math.sin(t * 2.3) * 1.5;
+  const hair = HAIR_FRONT[spec.hair];
+  const face = FACES[expression];
+  const mouthP = talking && Math.floor(t * 8) % 2 === 0 ? TALK_OPEN : face.mouth;
+  const blinkOn = (t * 1.0 + spec.height * 7) % 3.9 < 0.1;
+  const eyeK = blinkOn ? 0.1 : eyeOpen(face);
+  const gaze = face.eye.gaze ?? [0, 0];
+  const clip = dark < 0 ? 'url(#pv2-left)' : 'url(#pv2-right)';
+  const shadeHalf = (d: string, c: string) => <path d={d} fill={shd(c)} clipPath={clip} />;
+  const outfit: Record<Outfit, Vec[]> = {
+    coat: [[-sh, -150], [sh, -150], [sh + 9, -126], [sh + 13, 30], [sh + 22 + hem, 104], [-sh - 22 + hem, 104], [-sh - 13, 30], [-sh - 9, -126]],
+    dress: [[-sh + 2, -150], [sh - 2, -150], [sh + 6, -126], [sh + 1, -40], [sh + 20 + hem, 70], [-sh - 20 + hem, 70], [-sh - 1, -40], [-sh - 6, -126]],
+    jacket: [[-sh, -150], [sh, -150], [sh + 10, -124], [sh + 11, 22], [-sh - 11, 22], [-sh - 10, -124]],
+    sweater: [[-sh + 2, -150], [sh - 2, -150], [sh + 9, -124], [sh + 8, 14], [-sh - 8, 14], [-sh - 9, -124]],
+  };
+  const hemY = {coat: 104, dress: 70, jacket: 22, sweater: 14}[spec.outfit];
+  const sleeve = spec.outfit === 'dress' ? spec.skin : spec.top;
+
+  const arm = (side: 'l' | 'r') => {
+    const sx = j.hand[side][0] >= j.shoulder[side][0] ? 1 : -1;
+    const sideSign = side === 'r' ? 1 : -1;
+    const tn = tone(sideSign);
+    const a = (Math.atan2(j.hand[side][1] - j.elbow[side][1], j.hand[side][0] - j.elbow[side][0]) * 180) / Math.PI;
+    const h = handShape(hands?.[side] ?? 'relaxed');
+    // Thumb toward the body's centre line from the front, away from it from the back.
+    const flip = (sx * (isBack ? -1 : 1)) as 1 | -1;
+    return (
+      <g key={side}>
+        <path d={taper([j.shoulder[side], j.elbow[side], j.hand[side]], 27 * hb, 19)} fill={tn(sleeve)} />
+        <path d={taper([j.elbow[side], j.hand[side]], 14, 11)} fill={shd(sleeve)} opacity={0.3} />
+        <g transform={`translate(${j.hand[side][0]} ${j.hand[side][1]}) rotate(${a}) scale(0.95 ${0.95 * flip})`}>
+          {h.fingers.map((fg, i) => <path key={i} d={P(fg)} fill={i % 2 ? shd(spec.skin) : tn(spec.skin)} />)}
+          <path d={P(h.palm)} fill={tn(spec.skin)} />
+          <path d={P(h.thumb)} fill={isBack ? shd(spec.skin) : tn(spec.skin)} />
+        </g>
+      </g>
+    );
+  };
+  const leg = (side: 'l' | 'r') => {
+    const sg = side === 'r' ? 1 : -1;
+    const f = j.foot[side];
+    const tn = tone(sg);
+    return (
+      <g key={side}>
+        <path d={taper([j.hip[side], j.knee[side], f], 30 * hb, 17)} fill={tn(spec.legs)} />
+        <path d={taper([j.knee[side], f], 7, 6)} fill={shd(spec.legs)} opacity={0.3} transform={`translate(${sg * 5} 0)`} />
+        <path d={P([[f[0] - 12, f[1] + 3], [f[0] - 10, f[1] - 11], [f[0] + 10, f[1] - 11], [f[0] + 12, f[1] + 3]])} fill={tn(spec.shoes)} />
+        <path d={P(isBack ? [[f[0] - 11, f[1] - 4], [f[0] + 11, f[1] - 4], [f[0] + 12, f[1] + 3], [f[0] - 12, f[1] + 3]] : [[f[0] - 12, f[1] + 3], [f[0] - 13, f[1] - 2], [f[0] + 13, f[1] - 2], [f[0] + 12, f[1] + 3]])} fill={shd(spec.shoes)} />
+      </g>
+    );
+  };
+
+  const torso = (
+    <g transform={`translate(${j.pelvis[0]} ${j.pelvis[1]}) rotate(${j.torsoAngle})`}>
+      <path d={P(outfit[spec.outfit])} fill={lit(spec.top)} />
+      {shadeHalf(P(outfit[spec.outfit]), spec.top)}
+      {!isBack && (spec.outfit === 'coat' || spec.outfit === 'jacket') && (
+        <>
+          <path d={P([[-13, -150], [13, -150], [0, -100]])} fill={lit(spec.inner)} />
+          <path d={P([[-13, -150], [-21, -150], [-2, -90], [0, -100]])} fill={shd(spec.top)} />
+          <path d={P([[13, -150], [21, -150], [2, -90], [0, -100]])} fill={shd(spec.top)} opacity={0.7} />
+          <path d={P([[-1.5, -96], [1.5, -96], [1.5, hemY], [-1.5, hemY]])} fill={shd(spec.top)} />
+        </>
+      )}
+      {isBack && spec.outfit === 'coat' && <path d={P([[-1.5, 30], [1.5, 30], [1.5, 104], [-1.5, 104]])} fill={shd(spec.top)} />}
+      {isBack && spec.outfit !== 'sweater' && <path d={P([[-1, -150], [1, -150], [1, -40], [-1, -40]])} fill={shd(spec.top)} opacity={0.35} />}
+      {spec.outfit === 'coat' && <path d={P([[-sh - 13, 18], [sh + 13, 18], [sh + 13, 27], [-sh - 13, 27]])} fill={shd(spec.top)} />}
+      {spec.outfit === 'sweater' && <path d={P([[-sh - 8, 4], [sh + 8, 4], [sh + 8, 14], [-sh - 8, 14]])} fill={shd(spec.top)} />}
+      {spec.outfit === 'sweater' && !isBack && <path d={P([[-15, -150], [15, -150], [10, -139], [-10, -139]])} fill={shd(spec.top)} />}
+      {spec.outfit === 'dress' && !isBack && <path d={P([[-14, -150], [14, -150], [0, -128]])} fill={lit(spec.skin)} />}
+      {spec.outfit === 'dress' && <path d={P([[-sh - 1, -46], [sh + 1, -46], [sh + 1, -38], [-sh - 1, -38]])} fill={shd(spec.top)} />}
+      {spec.outfit === 'coat' && (
+        isBack ? (
+          <path d={P([[-sh + 4, -146], [-sh - 3, -176], [sh + 3, -176], [sh - 4, -146]])} fill={tone(dark)(spec.top)} />
+        ) : (
+          <>
+            <path d={P([[-sh + 4, -146], [-sh - 3, -177], [-13, -171], [-12, -146]])} fill={tone(-1)(spec.top)} />
+            <path d={P([[sh - 4, -146], [sh + 3, -177], [13, -171], [12, -146]])} fill={tone(1)(spec.top)} />
+          </>
+        )
+      )}
+      {spec.bag && <path d={P(isBack ? [[sh - 4, -150], [sh - 12, -150], [-sh - 4, 0], [-sh + 4, 0]] : [[-sh + 4, -150], [-sh + 12, -150], [sh + 4, 0], [sh - 4, 0]])} fill={shd(spec.bag)} />}
+      {spec.bag && <path d={P([[(isBack ? -1 : 1) * (sh - 4), -22], [(isBack ? -1 : 1) * (sh + 22), -22], [(isBack ? -1 : 1) * (sh + 24), 18], [(isBack ? -1 : 1) * (sh - 6), 18]])} fill={lit(spec.bag)} />}
+      {spec.scarf && (
+        <>
+          <path d={P([[-19, -162], [19, -162], [17, -144], [-17, -144]])} fill={lit(spec.scarf)} />
+          {!isBack && <path d={P([[-15, -150], [-4, -150], [-7, -54], [-18, -58]])} fill={shd(spec.scarf)} />}
+        </>
+      )}
+    </g>
+  );
+
+  return (
+    <g transform={`translate(${x} ${y}) scale(${scale * facing} ${scale})`}>
+      <defs>
+        <clipPath id="pv2-left"><rect x={-400} y={-400} width={400} height={800} /></clipPath>
+        <clipPath id="pv2-right"><rect x={0} y={-400} width={400} height={800} /></clipPath>
+      </defs>
+      {isBack && held && held.render()}
+      {!isBack && hair.behind && spec.hair === 'long' && (
+        <g transform={`translate(${j.head[0]} ${j.head[1]}) rotate(${j.headTilt})`}>
+          <path d={P(hair.behind)} fill={shd(spec.hairColor)} />
+        </g>
+      )}
+      {leg('l')}
+      {leg('r')}
+      {torso}
+      <path d={taper([j.neck, [j.head[0], j.head[1] + 34]], 22, 20)} fill={shd(spec.skin)} />
+      {!isBack && held && held.render()}
+      {arm('l')}
+      {arm('r')}
+      <g transform={`translate(${j.head[0]} ${j.head[1]}) rotate(${j.headTilt})`}>
+        {hair.behind && spec.hair === 'bun' && <path d={P(hair.behind)} fill={lit(spec.hairColor)} />}
+        {hair.ear && (
+          <>
+            <path d={P(EAR_F)} fill={tone(1)(spec.skin)} />
+            <path d={P(m(EAR_F))} fill={tone(-1)(spec.skin)} />
+          </>
+        )}
+        <path d={P(HEAD_F)} fill={lit(spec.skin)} />
+        {isBack ? (
+          <>
+            <path d={P(hair.back)} fill={lit(spec.hairColor)} />
+            {shadeHalf(P(hair.back), spec.hairColor)}
+            {hair.behind && spec.hair === 'bun' && <path d={P(hair.behind)} fill={lit(spec.hairColor)} />}
+            {spec.hair === 'beanie' && <path d={P([[-48, -4], [48, -4], [48, 6], [-48, 6]])} fill={shd(spec.hairColor)} />}
+          </>
+        ) : (
+          <>
+            <path d={P(dark < 0 ? HEAD_F_SHADE : m(HEAD_F_SHADE))} fill={shd(spec.skin)} opacity={0.6} />
+            <path d={P(NOSE_F)} fill={lit(spec.skin)} />
+            <path d={P(dark < 0 ? [[0, -6], [-3, 15], [0, 18]] : [[0, -6], [6, 15], [0, 18]])} fill={shd(spec.skin)} />
+            {([-1, 1] as const).map((sd) => (
+              <g key={sd}>
+                <g transform={`translate(${sd * 16} ${-17 + face.brow.lift}) scale(${sd} 1) rotate(${-face.brow.inner})`}>
+                  <path d={P([[-8, 1], [8, -2], [8.5, 2.5], [-8, 5]])} fill={lit(spec.hairColor)} />
+                </g>
+                <g transform={`translate(${sd * 16} -2)`}>
+                  <Eye k={eyeK} cheek={face.eye.cheek} w={7} pupil={[j.pupil[0] * 0.25 + gaze[0] * 3, j.pupil[1] * 0.3 + gaze[1] * 2.5]} />
+                </g>
+              </g>
+            ))}
+            <Mouth cx={0} cy={28} m={{...mouthP, width: mouthP.width * 1.25, open: mouthP.open * 1.2}} />
+            <path d={P(hair.front)} fill={lit(spec.hairColor)} />
+            {shadeHalf(P(hair.front), spec.hairColor)}
+            {spec.hair === 'beanie' && <path d={P([[-48, -16], [48, -16], [48, -6], [-48, -6]])} fill={shd(spec.hairColor)} />}
+          </>
+        )}
+      </g>
     </g>
   );
 };
