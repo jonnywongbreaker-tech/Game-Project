@@ -16,11 +16,12 @@ theme and asset kits retargets the engine.
 | Area | State |
 | --- | --- |
 | Script → video (JSON) | Working: dialogue + narrated modes, 16:9 + 9:16 + thumbnail from one scene, voice-over timing |
-| Visual direction | **Awaiting decision**: three prototypes A / B / C (section 3) |
+| Visual direction | **Chosen: Cinematic Geometric Editorial** (A's construction + C's light and depth). Benchmark v3 awaiting approval (section 3.1). Character design NOT locked |
 | Rig | Puppet rig v2: full skeleton, IK arms and legs, planted feet, look-at, lean/anticipation, secondary motion |
 | Props | Parenting to world / one hand / two-hand carry with smooth hand-offs |
-| Environments | Modular, data-placed kit (library set) with procedural shelves; parallax depth layers |
-| Concept visuals | Network kit (grow, pulse, spread, fade, dissolve). Charts/diagrams library not built yet |
+| Environments | **Space kit**: real 3D perspective with flat-shaded geometry, procedural architecture (atrium generator), lighting model, height fog. Plus the 2D parallax kit from v2 |
+| Concept visuals | Network kit in 2D and 3D (grow, recall wave, persistent glow, fade, dissolve), particle bursts. Charts/diagrams library not built yet |
+| Cinematography | Shot sequencer (cuts, per-shot camera keys, focus, depth-of-field bands, handheld drift) |
 | QC | Static QC (composition, readability, sync, movement, repetition, pacing), unit tests, visual regression, determinism, benchmarks |
 | Automation | Director / storyboard stage designed (section 5), not built |
 
@@ -79,6 +80,54 @@ decision gates the asset-library work (roadmap phase 1).
 4. **Asset breadth.** 3–5 environment sets, 30–50 props, 3–4 characters with outfits, and diagram types (bar, line, flow, timeline, labelled cutaway).
 5. **Art direction rules in QC.** Contrast/readability of text over backgrounds, silhouette clarity (character vs background value), and a minimum light/dark separation per theme.
 
+## 3.1 Benchmark v3: Cinematic Geometric Editorial (awaiting approval)
+
+Composition `Memory-v3-CinematicGeometric` (18 s, four shots), built with the new
+**Space** pipeline. Files: content in `src/prototypes/memory3/scene.ts`; renderer in
+`src/prototypes/memory3/Memory3.tsx`; look in `src/themes/cge/`.
+
+| Shot | Intent | Engine capabilities exercised |
+| --- | --- | --- |
+| 01 The archive (0–4.6 s) | Tiny vermilion librarian crossing a pool of light in a vast atrium; serif title in the negative space | Procedural atrium (≈3,700 polygons), perspective, oculus spotlight, height fog, volumetric beam, dust motes, low-angle crane with dutch roll |
+| 02 A new memory (4.6–9.2 s) | Close-up: the orb lifted into the light; its glow lights her face | Puppet IK carry/lift/offer, look-at, prop rendered between the arms, scene light applied to the character, rim light, shallow depth of field (shelf bokeh) |
+| 03 Connections (9.2–13.8 s) | Match cut to the orb on the shelf, then a three-stage pullback revealing a web of links across the void as recall spreads | 3D network (78 memories, 102 links), hop-by-hop recall wave, links igniting, dramatic dolly + crane + FOV change |
+| 04 Forgetting (13.8–18 s) | An isolated memory on a balcony edge dims, then dissolves into sparks while the lit network glows behind; closing title | Bokeh background via DOF bands, flicker/fade, particle burst, editorial end card |
+
+**Art direction choices:**
+- **Palette:** cool slate stone and pale haze against two warm accents, the vermilion coat and the amber memories, so the eye always finds the character and the idea.
+- **Light:** selective, not dark. Bright oculus and upper haze; light pools on the floor; orbs as point lights.
+- **Composition:** strong negative space for typography; extreme scale contrast (a 1.7 m figure in a 46 m atrium).
+- **Typography:** a serif display face for statements, sans chapter marks, and subtitles at 44 px over a gradient scrim (no boxes), shown whole for readability.
+
+**Character, "The Archivist" (exploratory, not locked):**
+- **Silhouette:** tall figure (head about 1/7 of height), long A-line coat that swings with movement, funnel collar, trailing scarf, sharp asymmetric bob.
+- **Face:** reduced to an eye, a nose wedge and a brow.
+- **Colour:** multiplied by the scene's light at her position, so she sits inside the lighting.
+
+### Reusable vs prototype-specific (v3)
+
+**Reusable engine capabilities added:**
+- `src/kit/space.ts`: camera, projection, near clipping, back-face culling, lighting model (hemisphere, directional, spot, point), height fog.
+- `src/engine/Space.tsx`: renders polygons + sprites with depth sorting and depth-of-field bands.
+- `src/kit/architecture.ts`: atrium generator (any sides, levels, bays, palette, seed) and a ladder. The same generator produces vaults, towers and archives.
+- `src/kit/shots.ts`: shot sequencer with camera keys, focus, blur and handheld drift.
+- `src/kit/particles.ts`: bursts and ambient motes.
+- `src/themes/cge/Archivist.tsx`: a skin on puppet v2 with light-aware toning.
+- `src/themes/cge/type.tsx`: editorial type system (Scrim, Subtitle, ChapterMark, Display).
+
+**Prototype-specific:**
+- The four camera paths and the archivist's action timings are hand-keyed data in `scene.ts`.
+- The memory-network layout rules (two nearest neighbours + long links) are inline.
+- Orb, link and beam drawing live in `Memory3.tsx` and should move into the theme.
+
+**To reach the professional standard consistently:**
+1. **Character design pass.** Hands and close-up anatomy (wrists, fingers as shapes), a three-quarter front view for faces toward camera, and an expression set. Close-ups are where the current design is weakest.
+2. **Shot grammar as data.** Named shot types (establishing, close-up, insert, pullback, over-the-shoulder) generated from subject + intent, so the director stage can request "close-up on the orb" instead of keying coordinates.
+3. **Character-in-3D rules.** Billboards cannot turn to face away from the camera; add front, back and profile views and pick per camera angle.
+4. **Composition QC on rendered frames:** subject on thirds, text over negative space, contrast between figure and background.
+5. **Geometry detail budget:** levels of detail (books merge into blocks with distance) to allow richer sets without slower renders.
+6. **More architecture generators** (stairs, bridges, arches, domes, outdoor terrain) for other metaphors.
+
 ## 4. Architecture review: capability matrix
 
 | Capability | Status | Notes / required change |
@@ -89,8 +138,8 @@ decision gates the asset-library work (roadmap phase 1).
 | Object interaction, attachment, parenting, layering | **Done (basic)** | World/hand/two-hand parenting, hand-offs, depth layering. **Next**: named attachment points on props and environment slots, z-order rules: *small* |
 | Themes independent of animation | **Done** | Proven by A/B/C on one scene. The default (Ep001) style should be ported to the theme contract: *medium* |
 | Data-driven diagrams, charts, cutaways | **Partial** | Network kit only. **Needs**: chart/diagram components as script elements: *additive, high value* |
-| Cinematic camera, parallax | **Done (basic)** | Keyframed camera, depth layers, speaker lead. **Next**: named shots (wide/medium/close), dolly zoom, rack focus, auto shot selection: *additive* |
-| Lighting, shadows, textures, effects | **Prototype** | All three styles demonstrate it; it lives in themes. **Needs**: light rig as scene data: *architectural, medium* |
+| Cinematic camera, parallax | **Done (v3)** | 2D parallax camera plus 3D shot sequencer: true perspective, crane/dolly/pullback, FOV changes, depth of field, handheld drift. **Next**: named shot types and auto shot selection: *additive* |
+| Lighting, shadows, textures, effects | **Done in Space (v3)** | Lights are scene data (hemisphere, directional, spot, point) shading all geometry and the character; fog, beams, particles. **Next**: cast shadows in 3D, port to the 2D kit: *medium* |
 | Independent horizontal/vertical composition | **Partial** | One scene, format-aware camera (follows speaker in 9:16), QC checks both. **Needs**: per-format overrides (camera, caption placement, safe areas): *small* |
 | Frame-accurate audio sync, phoneme lip sync | **Partial** | Per-line audio drives timing; word timing is estimated; mouth is generic flaps. **Needs**: forced alignment (word + phoneme times) → visemes: *medium* |
 | Optional subtitle styles | **Partial** | Per theme + on/off per format. **Needs**: style selection in the script: *small* |
@@ -146,7 +195,7 @@ props[], actions[], camera: 'wide'|'medium'|'close'|..., onScreenText?, diagram?
 | `npm run typecheck` | TypeScript |
 | `npm test` | 28 unit tests: compiler validation and timing, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
 | `npm run check` | Compiles every script and runs QC: overlap, off-screen/cropped speakers (both formats), fast speech, long Shorts subtitles, short captions, line overlap, sliding walks, pose flicker, repeated gestures, repeated backdrops, pacing metrics |
-| `npm run test:visual` | Renders 11 key frames and compares them with approved goldens (per platform), plus a determinism re-render. `-- --update` approves a new look |
+| `npm run test:visual` | Renders 14 key frames and compares them with approved goldens (per platform), plus a determinism re-render. `-- --update` approves a new look |
 | `npm run benchmark` | Render speed, real-time factor, projected 10-minute render time, peak memory of the whole render process tree, versatility counts, authoring effort |
 
 **Not yet covered:** checks on rendered pixels (text contrast, clipping detected from
@@ -175,6 +224,7 @@ Measured 2026-11-24 on a 4-core cloud Xeon, 1920×1080, Remotion default concurr
 | A · Geometric | 35 s | 2.3× | 23 min | 2.2 GB |
 | B · Textured | 105 s | 7.0× | 70 min | 2.7 GB |
 | C · Cinematic | 207 s | 13.8× | 138 min | 3.6 GB |
+| **v3 · Cinematic Geometric (18 s)** | 171 s | 9.5× | 95 min | 3.8 GB |
 
 All four fit comfortably in 24 GB. C's cost is dominated by blur filters (depth of
 field, bloom, soft shadows); B's by per-frame ink jitter on ~1,000 shapes. Both have
@@ -197,7 +247,9 @@ Ranked by visual impact × scalability ÷ effort, respecting dependencies.
 
 | # | Item | Impact | Scalability | Effort | Depends on |
 | --- | --- | --- | --- | --- | --- |
-| 0 | **Lock visual direction** (A / B / C / A+C) | ★★★ | ★★★ | S | You |
+| 0 | ~~Choose visual direction~~ → Cinematic Geometric Editorial. **Approve benchmark v3** (section 3.1) | ★★★ | ★★★ | S | You |
+| 0.5 | Character design pass (close-up anatomy, views, expressions), then lock | ★★★ | ★★★ | M | 0 |
+| 0.6 | Shot grammar as data (named shot types from subject + intent) | ★★★ | ★★★ | M | 0 |
 | 1.1 | Light rig as scene data, consumed by the locked theme | ★★★ | ★★ | M | 0 |
 | 1.2 | Character part system (slots, outfits, hair, accessories) + design pass + turnarounds | ★★★ | ★★★ | L | 0 |
 | 1.3 | Action vocabulary in the JSON: walkTo / carry / reach / place / give / point-at / look-at, compiled to puppet + props | ★★★ | ★★★ | M | — |

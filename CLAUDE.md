@@ -6,6 +6,7 @@ PROJECT.md is the single source of truth (goal, architecture, decisions, QC, ben
 - After changing anything visual: `npm run test:visual`. If the change is intended, approve it with `npm run test:visual -- --update` and look at the new goldens before committing.
 - To inspect a frame: `npx remotion still <Composition> out/check/x.png --frame=<n>`. Render one at a time; parallel Remotion processes in this repo can hang.
 - Separation rules (PROJECT.md §6): scene data and pure logic (`src/script`, `src/kit`, `src/qc`, `src/engine/{vocab,speech,designs,proportions,rig}`) never import React components; themes (`src/themes`) contain no timing or content.
+- Space scenes: huge planes (floors, ceilings) need a large depth `bias` so the painter's sort keeps them behind; verify new geometry from several camera angles.
 - Determinism: never use `Math.random()`; use Remotion's `random(seed)`.
 - No per-frame SVG texture filters (feTurbulence/feDisplacementMap over large areas). Use baked textures (`npm run bake-textures`) or geometry jitter (`src/themes/draw.ts`).
 - Adding vocabulary (poses, modules, actions): update `docs/SCRIPT_FORMAT.md` and add a test in the same change.

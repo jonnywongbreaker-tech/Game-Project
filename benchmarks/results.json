@@ -277,5 +277,55 @@
         "manualSteps": "write script → npm run check → npm run render"
       }
     ]
+  },
+  {
+    "date": "2026-11-24T22:41:27.947Z",
+    "machine": {
+      "platform": "linux x64",
+      "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+      "cores": 4,
+      "memoryGB": 16.9,
+      "node": "v22.23.5"
+    },
+    "bundleSeconds": 3,
+    "concurrency": "default",
+    "renders": [
+      {
+        "id": "Memory-v3-CinematicGeometric-Long",
+        "resolution": "1920x1080",
+        "frames": 540,
+        "videoSeconds": 18,
+        "renderSeconds": 171.2,
+        "fps": 3.2,
+        "realtimeFactor": 9.51,
+        "tenMinuteVideoMinutes": 95.1,
+        "peakMemoryMB": 3816
+      }
+    ],
+    "versatility": {
+      "castPresets": 5,
+      "poses": 8,
+      "expressions": 7,
+      "backdrops": 4,
+      "captionStyles": 3,
+      "visualStyles": 3,
+      "characterStates": 56
+    },
+    "automation": [
+      {
+        "id": "Ep001",
+        "beatsPerMinute": 19.7,
+        "scriptBytesPerMinute": 2718,
+        "qcWarnings": 0,
+        "manualSteps": "write script → npm run check → npm run render"
+      },
+      {
+        "id": "Ep002",
+        "beatsPerMinute": 15.2,
+        "scriptBytesPerMinute": 2728,
+        "qcWarnings": 0,
+        "manualSteps": "write script → npm run check → npm run render"
+      }
+    ]
   }
 ]

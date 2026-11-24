@@ -24,6 +24,9 @@ const FRAMES: [string, number][] = [
   ['Memory-B-Textured-Long', 245],
   ['Memory-C-Cinematic-Long', 245],
   ['Memory-C-Cinematic-Long', 390],
+  ['Memory-v3-CinematicGeometric-Long', 75],
+  ['Memory-v3-CinematicGeometric-Long', 190],
+  ['Memory-v3-CinematicGeometric-Long', 405],
 ];
 const SCALE = 0.5;
 /** Fraction of pixels allowed to differ before a frame counts as changed. */

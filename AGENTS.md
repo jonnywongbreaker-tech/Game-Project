@@ -20,8 +20,9 @@ npm run studio           # interactive preview of every composition
 
 ## Where things are
 - `src/script`: JSON script format, compiler, camera path (pure)
-- `src/kit`: puppet rig v2, props, environment kit, concept network (pure)
-- `src/themes`: visual themes A/B/C (look only)
-- `src/prototypes/memory`: the visual-direction benchmark scene (content + choreography)
+- `src/kit`: puppet rig v2, props, 2D environment kit, concept network, **space** (3D projection + lighting), **architecture** generators, **shots** sequencer, particles (pure)
+- `src/themes`: visual themes A/B/C (v2 benchmark) and `cge/` (Cinematic Geometric Editorial: Archivist skin, type system)
+- `src/prototypes/memory`: v2 style benchmark; `src/prototypes/memory3`: v3 four-shot benchmark (current)
+- `src/engine/Space.tsx`: 3D renderer (polygons + sprites, depth sort, depth of field)
 - `src/qc`: quality-control analyser; `tests/`: unit tests and visual goldens
 - `scripts`: check, render, benchmark, visual-test, bake-textures, sync-audio
