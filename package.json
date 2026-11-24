@@ -1,0 +1,23 @@
+{
+  "name": "toon-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Code-driven 2D cartoon animation engine for a YouTube channel, built on Remotion.",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "node scripts/render.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@remotion/cli": "4.0.547",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.547"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.32",
+    "@types/react-dom": "18.3.7",
+    "typescript": "5.9.3"
+  }
+}
