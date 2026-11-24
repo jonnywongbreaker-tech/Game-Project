@@ -69,6 +69,8 @@ const LEAD_IN = 0.4;
 const TAIL = 0.6;
 const EMOTE_HOLD = 1.8;
 const CAMERA_MOVE = 0.8;
+/** Scripted camera moves start this early so the shot is ready when the line begins. */
+const CAMERA_LEAD = 0.5;
 
 const dir = (f: 'left' | 'right'): 1 | -1 => (f === 'left' ? -1 : 1);
 
@@ -265,7 +267,7 @@ export function compileScript(script: ToonScript, audioDurations: AudioDurations
         }
       }
 
-      if (beat.camera) applyCamera(beat.camera, t0, bw);
+      if (beat.camera) applyCamera(beat.camera, Math.max(start, t0 - CAMERA_LEAD, lastCameraChange), bw);
 
       // Silent beats last as long as their walks (or `dur`).
       if (!who) length = beat.dur ?? Math.max(blockingUntil - t0, beat.caption ? 1.5 : 0);

@@ -10,3 +10,15 @@ export function shade(hex: string, amt: number): string {
   const b = ch(n & 255);
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 }
+
+/** Blend two #rrggbb colours: k=0 → a, k=1 → b. */
+export function mix(a: string, b: string, k: number): string {
+  const pa = parseInt(a.slice(1), 16);
+  const pb = parseInt(b.slice(1), 16);
+  const ch = (s: number) => {
+    const x = (pa >> s) & 255;
+    const y = (pb >> s) & 255;
+    return Math.round(x + (y - x) * Math.max(0, Math.min(1, k)));
+  };
+  return `#${((ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).padStart(6, '0')}`;
+}

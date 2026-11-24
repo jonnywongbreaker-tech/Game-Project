@@ -5,10 +5,10 @@ import {Camera} from '../engine/Camera';
 import {Character} from '../engine/Character';
 import {GROUND, useLayout} from '../engine/layout';
 import {Caption, SceneFades, Subtitles} from '../engine/overlays';
-import {isTalking, lastSpeaker, NARRATOR} from '../engine/speech';
-import {FrozenFrame, keyframes, move, step, stepInfo, tween, useTime} from '../engine/time';
+import {isTalking} from '../engine/speech';
+import {FrozenFrame, move, step, useTime} from '../engine/time';
+import {cameraAt} from './cameraPath';
 import type {CompiledEpisode, CompiledScene} from './compile';
-import type {FocusSpec} from './types';
 
 /** Plays a compiled ToonScript. Works at any size: 16:9, 9:16 or a thumbnail. */
 export const ScriptEpisode: React.FC<{episode: CompiledEpisode}> = ({episode}) => {
@@ -49,37 +49,11 @@ export const ScriptEpisode: React.FC<{episode: CompiledEpisode}> = ({episode}) =
 const SceneView: React.FC<{episode: CompiledEpisode; scene: CompiledScene}> = ({episode, scene}) => {
   const {t} = useTime();
   const {vertical} = useLayout();
-
-  const xOf = (id: string) => {
-    const a = scene.actors.find((x) => x.id === id);
-    return a ? move(t, a.x).x : undefined;
-  };
+  const cam = cameraAt(episode, scene, t, vertical);
   const sceneLines = episode.lines.filter((l) => l.start >= scene.start && l.start < scene.end);
 
-  const evalFocus = (f: FocusSpec): number => {
-    if (typeof f === 'number') return f;
-    if (f === 'center' || (f === 'auto' && !vertical)) return 960;
-    if (f === 'speaker' || f === 'auto') {
-      const onStage = sceneLines.filter((l) => l.who === NARRATOR || xOf(l.who) !== undefined);
-      const sp = lastSpeaker(onStage, t);
-      const fallback = scene.actors.length ? xOf(scene.actors[0].id)! : 960;
-      if (!sp) return fallback;
-      const cur = xOf(sp.who) ?? fallback;
-      const prev = sp.previous ? xOf(sp.previous) ?? cur : cur;
-      return tween(sp.since, [-0.1, 0.6], [prev, cur]);
-    }
-    return xOf(f) ?? 960;
-  };
-
-  const focus = stepInfo(t, scene.camera.focus);
-  const focusX =
-    focus.since === Infinity || focus.previous === focus.value
-      ? evalFocus(focus.value)
-      : tween(focus.since, [0, 0.8], [evalFocus(focus.previous), evalFocus(focus.value)]);
-  const camY = step(t, scene.camera.y);
-
   return (
-    <Camera focusX={focusX} focusY={camY ?? undefined} zoom={keyframes(t, scene.camera.zoom)}>
+    <Camera focusX={cam.focusX} focusY={cam.focusY} zoom={cam.zoom}>
       <Backdrop name={scene.backdrop} tint={scene.tint} />
       {scene.actors.map((a) => {
         const m = move(t, a.x);

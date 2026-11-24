@@ -2,7 +2,9 @@ import React from 'react';
 import {random} from 'remotion';
 import {shade} from './color';
 import type {CharacterDesign} from './designs';
-import {popIn, resolveTimed, Timed, tween, useTime, wave} from './time';
+import {CHARACTER_HEIGHT, HEAD_R, HEAD_Y} from './proportions';
+import {blendedArms} from './rig';
+import {popIn, resolveTimed, Timed, useTime, wave} from './time';
 import type {Expression, Pose} from './vocab';
 
 export type {Expression, Pose};
@@ -30,42 +32,8 @@ export interface CharacterProps {
   tilt?: number;
 }
 
-/** Arm angles in degrees, measured "outward" from hanging straight down. [upper, forearm] */
-type Arms = {l: [number, number]; r: [number, number]};
-
-const poseArms = (pose: Pose, t: number): Arms => {
-  switch (pose) {
-    case 'wave':
-      return {l: [10, -6], r: [140, 20 + wave(t, 2.2, 28)]};
-    case 'point':
-      return {l: [10, -6], r: [85, 4]};
-    case 'shrug':
-      return {l: [35, 95], r: [35, 95]};
-    case 'cheer':
-      return {l: [150, 15 + wave(t, 2, 12)], r: [150, 15 + wave(t, 2, 12, 0.5)]};
-    case 'think':
-      return {l: [10, -6], r: [12, -160]};
-    case 'hips':
-      return {l: [42, -80], r: [42, -80]};
-    case 'present':
-      return {l: [62, 14], r: [62, 14]};
-    case 'idle':
-    default:
-      return {l: [10 + wave(t, 0.45, 2), -6], r: [10 + wave(t, 0.45, 2, 0.3), -6]};
-  }
-};
-
-const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
-const lerpArms = (a: Arms, b: Arms, k: number): Arms => ({
-  l: [lerp(a.l[0], b.l[0], k), lerp(a.l[1], b.l[1], k)],
-  r: [lerp(a.r[0], b.r[0], k), lerp(a.r[1], b.r[1], k)],
-});
-
 const INK = '#2b2233';
-const HEAD_Y = -385;
-const HEAD_R = 88;
-/** Height of the top of the head above the feet, at scale 1. */
-export const CHARACTER_HEIGHT = -HEAD_Y + HEAD_R + 10;
+export {CHARACTER_HEIGHT};
 
 export const Character: React.FC<CharacterProps> = (p) => {
   const {t, frame} = useTime();
@@ -81,9 +49,7 @@ export const Character: React.FC<CharacterProps> = (p) => {
   const bob = walking ? -Math.abs(Math.sin(phase)) * 12 : wave(t, 0.45, 3, seed * 0.17);
 
   // --- Pose (blended over 0.25s when it changes) -----------------------------
-  const pose = resolveTimed(t, p.pose ?? 'idle');
-  const blend = tween(pose.since, [0, 0.25], [0, 1]);
-  const arms = lerpArms(poseArms(pose.previous, t), poseArms(pose.value, t), blend);
+  const arms = blendedArms(p.pose ?? 'idle', t);
   const armSwing = walking ? swing * 24 : 0;
 
   // --- Face ------------------------------------------------------------------

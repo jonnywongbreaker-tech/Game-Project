@@ -8,7 +8,11 @@
     "check": "tsx scripts/check.ts",
     "render": "node scripts/render.mjs",
     "sync-audio": "node scripts/sync-audio.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:visual": "tsx scripts/visual-test.ts",
+    "benchmark": "tsx scripts/benchmark.ts",
+    "bake-textures": "tsx scripts/bake-textures.ts"
   },
   "license": "UNLICENSED",
   "dependencies": {
@@ -18,8 +22,14 @@
     "remotion": "4.0.547"
   },
   "devDependencies": {
+    "@remotion/bundler": "4.0.547",
+    "@remotion/renderer": "4.0.547",
+    "@types/pixelmatch": "5.2.6",
+    "@types/pngjs": "6.0.5",
     "@types/react": "18.3.32",
     "@types/react-dom": "18.3.7",
+    "pixelmatch": "6.0.0",
+    "pngjs": "7.0.0",
     "tsx": "4.23.15",
     "typescript": "5.9.3"
   }

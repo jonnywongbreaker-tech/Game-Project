@@ -1,0 +1,198 @@
+[
+  {
+    "date": "2026-11-24T21:51:07.960Z",
+    "machine": {
+      "platform": "linux x64",
+      "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+      "cores": 4,
+      "memoryGB": 16.9,
+      "node": "v22.23.5"
+    },
+    "bundleSeconds": 2.7,
+    "concurrency": "default",
+    "renders": [
+      {
+        "id": "Ep001-Long",
+        "resolution": "1920x1080",
+        "frames": 1283,
+        "videoSeconds": 42.766666666666666,
+        "renderSeconds": 69.1,
+        "fps": 18.6,
+        "realtimeFactor": 1.62,
+        "tenMinuteVideoMinutes": 16.2,
+        "peakMemoryMB": 2279
+      },
+      {
+        "id": "Ep001-Short",
+        "resolution": "1080x1920",
+        "frames": 1283,
+        "videoSeconds": 42.766666666666666,
+        "renderSeconds": 68.1,
+        "fps": 18.8,
+        "realtimeFactor": 1.59,
+        "tenMinuteVideoMinutes": 15.9,
+        "peakMemoryMB": 2197
+      },
+      {
+        "id": "StyleA-Geometric-Long",
+        "resolution": "1920x1080",
+        "frames": 450,
+        "videoSeconds": 15,
+        "renderSeconds": 23.8,
+        "fps": 18.9,
+        "realtimeFactor": 1.59,
+        "tenMinuteVideoMinutes": 15.9,
+        "peakMemoryMB": 1716
+      },
+      {
+        "id": "StyleB-Textured-Long",
+        "resolution": "1920x1080",
+        "frames": 450,
+        "videoSeconds": 15,
+        "renderSeconds": 155.9,
+        "fps": 2.9,
+        "realtimeFactor": 10.39,
+        "tenMinuteVideoMinutes": 103.9,
+        "peakMemoryMB": 2109
+      },
+      {
+        "id": "StyleC-Cinematic-Long",
+        "resolution": "1920x1080",
+        "frames": 450,
+        "videoSeconds": 15,
+        "renderSeconds": 64.2,
+        "fps": 7,
+        "realtimeFactor": 4.28,
+        "tenMinuteVideoMinutes": 42.8,
+        "peakMemoryMB": 2141
+      }
+    ],
+    "versatility": {
+      "castPresets": 5,
+      "poses": 8,
+      "expressions": 7,
+      "backdrops": 4,
+      "captionStyles": 3,
+      "visualStyles": 3,
+      "characterStates": 56
+    },
+    "automation": [
+      {
+        "id": "Ep001",
+        "beatsPerMinute": 19.7,
+        "scriptBytesPerMinute": 2718,
+        "qcWarnings": 0,
+        "manualSteps": "write script \u2192 npm run check \u2192 npm run render"
+      },
+      {
+        "id": "Ep002",
+        "beatsPerMinute": 15.2,
+        "scriptBytesPerMinute": 2728,
+        "qcWarnings": 0,
+        "manualSteps": "write script \u2192 npm run check \u2192 npm run render"
+      }
+    ]
+  },
+  {
+    "date": "2026-11-24T21:54:50.813Z",
+    "machine": {
+      "platform": "linux x64",
+      "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+      "cores": 4,
+      "memoryGB": 16.9,
+      "node": "v22.23.5"
+    },
+    "bundleSeconds": 2.9,
+    "concurrency": "default",
+    "renders": [
+      {
+        "id": "StyleB-Textured-Long",
+        "resolution": "1920x1080",
+        "frames": 450,
+        "videoSeconds": 15,
+        "renderSeconds": 170.4,
+        "fps": 2.6,
+        "realtimeFactor": 11.36,
+        "tenMinuteVideoMinutes": 113.6,
+        "peakMemoryMB": 2578
+      }
+    ],
+    "versatility": {
+      "castPresets": 5,
+      "poses": 8,
+      "expressions": 7,
+      "backdrops": 4,
+      "captionStyles": 3,
+      "visualStyles": 3,
+      "characterStates": 56
+    },
+    "automation": [
+      {
+        "id": "Ep001",
+        "beatsPerMinute": 19.7,
+        "scriptBytesPerMinute": 2718,
+        "qcWarnings": 0,
+        "manualSteps": "write script \u2192 npm run check \u2192 npm run render"
+      },
+      {
+        "id": "Ep002",
+        "beatsPerMinute": 15.2,
+        "scriptBytesPerMinute": 2728,
+        "qcWarnings": 0,
+        "manualSteps": "write script \u2192 npm run check \u2192 npm run render"
+      }
+    ],
+    "note": "StyleB with baked grain textures; rough filter on whole scene"
+  },
+  {
+    "date": "2026-11-24T21:56:21.343Z",
+    "machine": {
+      "platform": "linux x64",
+      "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+      "cores": 4,
+      "memoryGB": 16.9,
+      "node": "v22.23.5"
+    },
+    "bundleSeconds": 3.1,
+    "concurrency": "default",
+    "renders": [
+      {
+        "id": "StyleB-Textured-Long",
+        "resolution": "1920x1080",
+        "frames": 450,
+        "videoSeconds": 15,
+        "renderSeconds": 76.8,
+        "fps": 5.9,
+        "realtimeFactor": 5.12,
+        "tenMinuteVideoMinutes": 51.2,
+        "peakMemoryMB": 2774
+      }
+    ],
+    "versatility": {
+      "castPresets": 5,
+      "poses": 8,
+      "expressions": 7,
+      "backdrops": 4,
+      "captionStyles": 3,
+      "visualStyles": 3,
+      "characterStates": 56
+    },
+    "automation": [
+      {
+        "id": "Ep001",
+        "beatsPerMinute": 19.7,
+        "scriptBytesPerMinute": 2718,
+        "qcWarnings": 0,
+        "manualSteps": "write script \u2192 npm run check \u2192 npm run render"
+      },
+      {
+        "id": "Ep002",
+        "beatsPerMinute": 15.2,
+        "scriptBytesPerMinute": 2728,
+        "qcWarnings": 0,
+        "manualSteps": "write script \u2192 npm run check \u2192 npm run render"
+      }
+    ],
+    "note": "experiment: StyleB with rough filter on the character only (background unfiltered)"
+  }
+]

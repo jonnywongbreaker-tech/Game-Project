@@ -4,13 +4,14 @@ import type {CodeEpisode} from './engine/episode';
 import {FONT} from './engine/fonts';
 import {FrozenFrame} from './engine/time';
 import {rigTest} from './episodes/RigTest';
+import {STYLE_BENCHMARKS} from './prototypes';
 import {SCRIPTS} from './episodes/scripts';
 import audioDurations from './generated/audio-durations.json';
 import {compileScript} from './script/compile';
 import {ScriptEpisode} from './script/ScriptEpisode';
 
 /** Code-written episodes (escape hatch). JSON episodes live in episodes/scripts.ts. */
-const CODE_EPISODES: CodeEpisode[] = [rigTest];
+const CODE_EPISODES: CodeEpisode[] = [rigTest, ...STYLE_BENCHMARKS];
 
 interface Registered {
   id: string;
