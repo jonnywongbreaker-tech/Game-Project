@@ -3,9 +3,9 @@ import {random} from 'remotion';
 import {shade} from './color';
 import type {CharacterDesign} from './designs';
 import {popIn, resolveTimed, Timed, tween, useTime, wave} from './time';
+import type {Expression, Pose} from './vocab';
 
-export type Pose = 'idle' | 'wave' | 'point' | 'shrug' | 'cheer' | 'think' | 'hips' | 'present';
-export type Expression = 'neutral' | 'happy' | 'laugh' | 'sad' | 'angry' | 'surprised' | 'smug';
+export type {Expression, Pose};
 
 export interface CharacterProps {
   design: CharacterDesign;

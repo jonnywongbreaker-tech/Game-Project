@@ -1,8 +1,14 @@
+import {createContext, useContext} from 'react';
 import {Easing, interpolate, useCurrentFrame, useVideoConfig} from 'remotion';
+
+/** Pins engine time to a fixed frame (used for thumbnails). */
+export const FrozenFrame = createContext<number | null>(null);
 
 /** Everything in the engine is authored in SECONDS, not frames. */
 export const useTime = () => {
-  const frame = useCurrentFrame();
+  const live = useCurrentFrame();
+  const frozen = useContext(FrozenFrame);
+  const frame = frozen ?? live;
   const {fps, durationInFrames} = useVideoConfig();
   return {frame, fps, t: frame / fps, duration: durationInFrames / fps};
 };
@@ -92,18 +98,25 @@ export const popIn = (since: number, dur = 0.35) => tween(since, [0, dur], [0, 1
 
 /**
  * Move along x keyframes. Returns x plus `walking`, `facing` and `walkPhase`
- * so the Character's legs stay in sync with the distance travelled (no foot sliding).
+ * (cumulative distance in strides) so the Character's legs stay in sync with
+ * the distance travelled — no foot sliding.
  */
 export function move(t: number, keys: readonly Keyframe<number>[], easing: EasingFn = ease.inOut) {
   const x = keyframes(t, keys, easing);
   let walking = false;
   let facing: 1 | -1 | undefined;
+  let distance = 0;
   for (let i = 0; i < keys.length - 1; i++) {
     const [t0, a] = keys[i];
     const [t1, b] = keys[i + 1];
     if (a === b || t < t0) continue;
     facing = b > a ? 1 : -1;
-    if (t < t1) walking = true;
+    if (t < t1) {
+      walking = true;
+      distance += Math.abs(x - a);
+    } else {
+      distance += Math.abs(b - a);
+    }
   }
-  return {x, walking, facing, walkPhase: Math.abs(x - keys[0][1]) / 230};
+  return {x, walking, facing, walkPhase: distance / 230};
 }

@@ -1,0 +1,61 @@
+{
+  "id": "Ep002",
+  "title": "3 Habits of Fast Learners",
+  "cast": {"ada": "ada", "ben": "ben"},
+  "accent": "#9b5de5",
+  "thumbnail": {"at": 5, "text": "LEARN FASTER"},
+  "scenes": [
+    {
+      "backdrop": "studio",
+      "tint": "#c9a7ff",
+      "title": "3 Habits of Fast Learners",
+      "actors": {"ada": {"x": 960, "facing": "right", "expression": "happy"}},
+      "beats": [
+        {"narrate": "Some people seem to learn anything in a week.", "do": [{"actor": "ada", "pose": "hips"}]},
+        {"narrate": "Here's what they do differently.", "do": [{"actor": "ada", "pose": "present", "expression": "smug"}]},
+        {
+          "narrate": "Habit one: they explain what they learn, out loud.",
+          "caption": {"text": "1. TEACH IT", "style": "note", "hold": 6},
+          "do": [{"actor": "ada", "pose": "point", "expression": "happy", "emote": "!"}]
+        },
+        {
+          "narrate": "If you can't explain it simply, you don't know it yet.",
+          "camera": {"zoom": 1.35, "focus": "ada", "y": 520},
+          "do": [{"actor": "ada", "pose": "think", "expression": "neutral"}]
+        }
+      ]
+    },
+    {
+      "backdrop": "room",
+      "actors": {
+        "ben": {"x": 1250, "expression": "sad"},
+        "ada": {"x": 720, "expression": "happy"}
+      },
+      "beats": [
+        {
+          "narrate": "Habit two: short sessions, with real breaks.",
+          "caption": {"text": "2. SHORT SESSIONS", "style": "note", "hold": 7}
+        },
+        {"narrate": "Cramming for six hours feels productive...", "camera": {"focus": "ben", "zoom": 1.2}, "do": [{"actor": "ben", "emote": "..."}]},
+        {
+          "narrate": "but your brain keeps more from small, spaced chunks.",
+          "camera": {"focus": "ada", "zoom": 1.2},
+          "do": [{"actor": "ada", "pose": "cheer", "expression": "laugh"}]
+        },
+        {
+          "narrate": "Habit three: they test themselves before they feel ready.",
+          "caption": {"text": "3. GET IT WRONG", "style": "note", "hold": 7},
+          "camera": {"focus": "auto", "zoom": 1},
+          "do": [{"actor": "ben", "walkTo": 1050, "expression": "surprised"}]
+        },
+        {"say": "ben", "text": "Wait, getting it wrong is good?", "pose": "shrug"},
+        {"say": "ada", "text": "Mistakes show your brain exactly what to fix.", "pose": "present", "expression": "happy"},
+        {
+          "narrate": "Try one habit today. See you next time!",
+          "caption": "SUBSCRIBE!",
+          "do": [{"actor": "ada", "pose": "wave"}, {"actor": "ben", "pose": "cheer", "expression": "laugh"}]
+        }
+      ]
+    }
+  ]
+}

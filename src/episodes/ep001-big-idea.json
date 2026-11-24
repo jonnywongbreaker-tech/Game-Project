@@ -1,0 +1,168 @@
+{
+  "id": "Ep001",
+  "title": "The Big Idea",
+  "cast": {
+    "mia": "mia",
+    "leo": "leo"
+  },
+  "thumbnail": {
+    "at": 21,
+    "text": "THE BIG IDEA"
+  },
+  "scenes": [
+    {
+      "backdrop": "park",
+      "title": "The Big Idea",
+      "actors": {
+        "mia": {
+          "x": 1180,
+          "expression": "happy"
+        },
+        "leo": {
+          "x": 700
+        }
+      },
+      "beats": [
+        {
+          "say": "mia",
+          "text": "Leo! Over here!",
+          "pose": "wave",
+          "expression": "happy",
+          "do": [
+            {
+              "actor": "leo",
+              "enter": "left"
+            }
+          ]
+        },
+        {
+          "say": "leo",
+          "text": "Hey Mia. Why are you so excited?",
+          "expression": "neutral"
+        },
+        {
+          "say": "mia",
+          "text": "I have the biggest idea ever.",
+          "pose": "present",
+          "emote": "!",
+          "sfx": "sfx/pop.wav"
+        },
+        {
+          "say": "leo",
+          "text": "Bigger than the flying sandwich?",
+          "expression": "smug",
+          "camera": {
+            "zoom": 1.2,
+            "focus": "leo"
+          }
+        },
+        {
+          "say": "mia",
+          "text": "That was a prototype.",
+          "pose": "shrug",
+          "expression": "neutral",
+          "camera": {
+            "zoom": 1,
+            "focus": "auto"
+          }
+        },
+        {
+          "say": "mia",
+          "text": "We start a YouTube channel. Cartoons. Made with code!",
+          "pose": "point",
+          "expression": "happy",
+          "camera": {
+            "zoom": 1.3,
+            "focus": "mia"
+          }
+        },
+        {
+          "say": "leo",
+          "text": "Code? Like... robots drawing for us?",
+          "pose": "think",
+          "expression": "surprised",
+          "emote": "?",
+          "camera": {
+            "zoom": 1,
+            "focus": "auto"
+          }
+        },
+        {
+          "say": "mia",
+          "text": "Exactly! Every frame, perfectly on time.",
+          "pose": "cheer",
+          "expression": "laugh"
+        },
+        {
+          "say": "leo",
+          "text": "Okay, I'm in. But I'm the funny one.",
+          "pose": "present",
+          "expression": "happy",
+          "do": [
+            {
+              "actor": "mia",
+              "expression": "neutral"
+            }
+          ]
+        },
+        {
+          "say": "mia",
+          "text": "We'll see about that.",
+          "pose": "hips",
+          "expression": "smug"
+        }
+      ]
+    },
+    {
+      "backdrop": "city",
+      "actors": {
+        "leo": {
+          "x": 760,
+          "pose": "think"
+        },
+        "mia": {
+          "x": 1160
+        }
+      },
+      "beats": [
+        {
+          "narrate": "That night, they wrote their very first script.",
+          "do": [
+            {
+              "actor": "mia",
+              "emote": "..."
+            }
+          ]
+        },
+        {
+          "say": "leo",
+          "text": "Episode one. Two friends. One big idea.",
+          "expression": "happy"
+        },
+        {
+          "say": "mia",
+          "text": "Wait. That's us.",
+          "expression": "surprised",
+          "emote": "!",
+          "sfx": "sfx/pop.wav"
+        },
+        {
+          "narrate": "Subscribe to see what happens next.",
+          "caption": "SUBSCRIBE!",
+          "do": [
+            {
+              "actor": "mia",
+              "pose": "wave",
+              "expression": "happy"
+            },
+            {
+              "actor": "leo",
+              "pose": "wave",
+              "expression": "happy"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

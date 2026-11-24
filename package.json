@@ -5,7 +5,9 @@
   "description": "Code-driven 2D cartoon animation engine for a YouTube channel, built on Remotion.",
   "scripts": {
     "studio": "remotion studio",
+    "check": "tsx scripts/check.ts",
     "render": "node scripts/render.mjs",
+    "sync-audio": "node scripts/sync-audio.mjs",
     "typecheck": "tsc --noEmit"
   },
   "license": "UNLICENSED",
@@ -18,6 +20,7 @@
   "devDependencies": {
     "@types/react": "18.3.32",
     "@types/react-dom": "18.3.7",
+    "tsx": "4.23.15",
     "typescript": "5.9.3"
   }
 }
