@@ -77,4 +77,4 @@ const def: SceneDef = {
   title: {kicker: 'Versatility · Natural', lines: ['Everything flows', 'downhill.'], start: 0.4, end: 3.6, top: 150},
 };
 
-export const Nature: React.FC = () => <SceneFrame def={def} />;
+export const Nature: React.FC<{production?: boolean}> = ({production}) => <SceneFrame def={def} production={production} />;

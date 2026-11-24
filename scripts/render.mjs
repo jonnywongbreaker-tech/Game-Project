@@ -13,19 +13,24 @@ const ids = args.filter((a) => !a.startsWith('--'));
 const kinds = ['long', 'short', 'thumb'].filter((k) => args.includes(`--${k}`));
 const wanted = kinds.length ? kinds : ['long', 'short', 'thumb'];
 
-const check = spawnSync('npx', ['tsx', 'scripts/check.ts', ...ids], {stdio: 'inherit'});
-if (check.status !== 0) {
-  console.error('\nFix the errors above before rendering.');
-  process.exit(1);
-}
-
 const all = execFileSync('npx', ['remotion', 'compositions', '--quiet'], {stdio: ['ignore', 'pipe', 'ignore']}).toString().trim().split('\n').pop().trim().split(/\s+/);
 const targets = all.filter((c) => {
   const [id, kind] = [c.slice(0, c.lastIndexOf('-')), c.slice(c.lastIndexOf('-') + 1).toLowerCase()];
   return (!ids.length || ids.includes(id)) && wanted.includes(kind);
 });
+const unknown = ids.filter(id => !all.some(composition => composition.slice(0, composition.lastIndexOf('-')) === id));
+if (unknown.length) {
+  console.error(`Unknown episode(s): ${unknown.join(', ')}`);
+  process.exit(1);
+}
 if (!targets.length) {
   console.error(`Nothing to render. Available: ${all.join(', ')}`);
+  process.exit(1);
+}
+
+const check = spawnSync('npx', ['tsx', 'scripts/check.ts', '--allow-code', ...ids], {stdio: 'inherit'});
+if (check.status !== 0) {
+  console.error('\nFix the errors above before rendering.');
   process.exit(1);
 }
 

@@ -1,0 +1,38 @@
+{
+  "id": "feedback-pilot",
+  "title": "How Feedback Keeps a System Steady",
+  "shots": [
+    {
+      "id": "street", "template": "urban", "headline": "Why do systems drift?", "tail": 0.65,
+      "voice": {"file": "../../out/pilot-voice/street.wav", "text": "Traffic, temperature, and water levels all change. Left alone, a small disturbance can move a system farther from the state we want."}
+    },
+    {
+      "id": "target", "template": "card", "headline": "Start with a target", "tail": 0.65,
+      "voice": {"file": "../../out/pilot-voice/target.wav", "text": "Imagine a room on a cold day. You want it to stay at twenty degrees. That number is the target. The room itself will keep losing heat."}
+    },
+    {
+      "id": "loop", "template": "flow", "headline": "The feedback loop", "labels": ["Measure", "Compare", "Act", "Measure again"], "tail": 0.65,
+      "voice": {"file": "../../out/pilot-voice/loop.wav", "text": "A thermostat measures the room, compares it with the target, and switches on the heater. Then it measures again to see what changed."}
+    },
+    {
+      "id": "machine", "template": "machine", "headline": "An action changes the system", "tail": 0.65,
+      "voice": {"file": "../../out/pilot-voice/machine.wav", "text": "Think of the heater as the part that acts. It changes the system. The sensor closes the loop by reporting the result of that action."}
+    },
+    {
+      "id": "correction", "template": "flow", "headline": "Correct in the opposite direction", "labels": ["Below target", "Add heat", "Gap shrinks"], "tail": 0.65,
+      "voice": {"file": "../../out/pilot-voice/correction.wav", "text": "When the room is too cold, the heater adds heat. As the gap shrinks, the thermostat can switch it off. That is negative feedback."}
+    },
+    {
+      "id": "delay", "template": "card", "headline": "Delay changes the result", "tail": 0.65,
+      "voice": {"file": "../../out/pilot-voice/delay.wav", "text": "A slow sensor can report yesterday's news in miniature. If the heater keeps running while the room is already warm, the temperature can overshoot."}
+    },
+    {
+      "id": "traffic", "template": "urban", "headline": "The pattern travels", "tail": 0.65,
+      "voice": {"file": "../../out/pilot-voice/traffic.wav", "text": "The same idea works on a road. A signal can measure a growing queue and give that direction more green time, then check the queue again."}
+    },
+    {
+      "id": "recap", "template": "flow", "headline": "Look for the loop", "labels": ["Target", "Measurement", "Correction"], "tail": 0.9,
+      "voice": {"file": "../../out/pilot-voice/recap.wav", "text": "Next time a system stays steady, look for three things. What is the target? What is measured? And what action reduces the gap?"}
+    }
+  ]
+}

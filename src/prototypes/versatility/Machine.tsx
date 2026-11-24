@@ -105,4 +105,4 @@ const def: SceneDef = {
   },
 };
 
-export const Machine: React.FC = () => <SceneFrame def={def} />;
+export const Machine: React.FC<{production?: boolean}> = ({production}) => <SceneFrame def={def} production={production} />;

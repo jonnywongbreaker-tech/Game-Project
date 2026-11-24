@@ -72,3 +72,24 @@ test('actors face each other by default', () => {
   assert.equal(mia.facing[0][1], 1);
   assert.equal(leo.facing[0][1], -1);
 });
+
+test('measured audio cannot be overridden by a conflicting beat duration', () => {
+  const script = baseScript();
+  Object.assign(script.scenes[0].beats[0], {audio: 'voice.wav', dur: 1});
+  const episode = compileScript(script, {'voice.wav': 4});
+  assert.match(episode.issues[0].message, /conflicts with the measured audio duration/);
+  assert.equal(episode.lines[0].end - episode.lines[0].start, 4);
+  assert.ok(episode.lines[1].start >= episode.lines[0].end);
+});
+
+test('malformed input, invalid timing and unsupported action fields produce diagnostics', () => {
+  const malformed = {...baseScript(), scenes: null} as unknown as ReturnType<typeof baseScript>;
+  assert.match(compileScript(malformed).issues[0].where, /scenes/);
+  const script = baseScript();
+  Object.assign(script.scenes[0].beats[0], {dur: -2, do: [{actor: 'leo', y: -150, scale: 2}]});
+  const issues = compileScript(script).issues.map(issue => issue.where);
+  assert.ok(issues.some(where => where.endsWith('.dur')));
+  assert.ok(issues.some(where => where.endsWith('.y')));
+  assert.ok(issues.some(where => where.endsWith('.scale')));
+  assert.match(compileScript(null as unknown as typeof script).issues[0].message, /object/);
+});

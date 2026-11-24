@@ -100,4 +100,4 @@ const def: SceneDef = {
   title: {kicker: 'Versatility · Urban', lines: ['Cities move', 'in rhythm.'], start: 0.4, end: 2.5, top: 150},
 };
 
-export const Urban: React.FC = () => <SceneFrame def={def} />;
+export const Urban: React.FC<{production?: boolean}> = ({production}) => <SceneFrame def={def} production={production} />;

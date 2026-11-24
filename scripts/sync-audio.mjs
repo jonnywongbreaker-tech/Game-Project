@@ -17,7 +17,9 @@ const walk = (dir) =>
 const out = {};
 for (const file of walk('public').sort()) {
   const secs = execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]).toString().trim();
-  out[relative('public', file).split('\\').join('/')] = Math.round(parseFloat(secs) * 1000) / 1000;
+  const duration = Number(secs);
+  if (!Number.isFinite(duration) || duration <= 0) throw new Error(`Invalid audio duration for ${file}`);
+  out[relative('public', file).split('\\').join('/')] = duration;
 }
 writeFileSync('src/generated/audio-durations.json', JSON.stringify(out, null, 2) + '\n');
 console.log(`Measured ${Object.keys(out).length} audio file(s) → src/generated/audio-durations.json`);

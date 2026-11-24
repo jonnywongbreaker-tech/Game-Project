@@ -11,22 +11,157 @@ per video, near-zero generation cost, and visual quality that competes with
 established educational and entertainment channels. Niche-independent: swapping the
 theme and asset kits retargets the engine.
 
+## 1.1 Production pipeline MVP
+
+Use the production CLI for new narrated episodes. Claude Code and Codex author the
+episode JSON and run the same commands. The production entry point uses Remotion
+and the existing SVG scene kits. It accepts an episode from disk with no static
+registration or network assets. The earlier ToonScript demos and Studio
+compositions are still available under their existing commands.
+
+### Reproduce the feedback pilot
+
+From the repository root, use Node.js 20+, FFmpeg with ffprobe, and local
+Chrome/Chromium. Set `REMOTION_BROWSER_EXECUTABLE` to the browser executable to
+use an existing installation offline. The sample voice generator uses FFmpeg's
+`flite` filter on Linux or the built-in `say` command on macOS. For a different
+Linux FFmpeg build, supply your own local WAV files at the manifest paths.
+
+```sh
+npm ci
+npm run pilot:voice
+npm run production -- check examples/pilot/episode.json
+npm run production -- preview examples/pilot/episode.json loop --frame 100
+npm run production -- render examples/pilot/episode.json loop
+npm run production -- assemble examples/pilot/episode.json
+npm run production -- srt examples/pilot/episode.json
+npm run typecheck && npm test && npm run check
+npm run test:visual
+```
+
+Assembly writes `out/production/feedback-pilot/feedback-pilot.mp4` with matching
+`.json` (timing manifest) and `.srt` files. The pilot contains eight narrated
+shots and demonstrates repeated templates and a thermostat feedback diagram.
+Narration is generated locally for reproducibility. The voice and duration can
+vary across operating systems. Commands that write files accept `--out <dir>`.
+Keep separate output directories for concurrent exports of different revisions.
+
+### Episode format and execution
+
+The top-level object has `id`, `title`, and ordered `shots`. Each shot needs an
+`id` unique within the episode and a `template`. The available templates are
+`card`, `flow`, `urban`, `machine`, `nature`, and `abstract`. A `headline`
+is required for `card` and `flow` and optional for the existing cinematic scenes.
+A `flow` also takes two to four `labels`. Cinematic templates reuse the existing
+scene and camera motions retimed to fill the shot. JSON configures the template
+and headline. Cameras, rigs, and scene contents are still authored in code.
+
+```json
+{
+  "id": "feedback",
+  "title": "How Feedback Works",
+  "shots": [
+    {
+      "id": "loop",
+      "template": "flow",
+      "headline": "Measure, compare, act",
+      "labels": ["Measure", "Compare", "Act"],
+      "voice": {"file": "voice/loop.wav", "text": "Measure, compare, then act."},
+      "tail": 0.5
+    },
+    {"id": "end", "template": "card", "headline": "End", "duration": 1.0}
+  ]
+}
+```
+
+Paths use forward slashes and are relative to the episode file. A voiced shot
+starts the clip at frame zero and takes its length from ffprobe. Use `tail` to
+hold after the voice. A silent shot specifies `duration` in seconds. A voiced
+shot with `duration` is rejected. The CLI rejects unknown fields and shot IDs,
+missing clips, invalid time values, and duplicate shot IDs. `check` prints JSON
+with integer `startFrame` and exclusive `endFrame` values at 30 fps. Use
+`npm run --silent production -- check <episode.json>` for agent-readable JSON.
+Shot preview and render need media for the selected shot only.
+
+`preview` writes a PNG under `shots/` and `render` writes a narrated shot MP4.
+Use `render --force` to regenerate the picture for that shot, or edit its JSON
+and let the cache miss naturally. `assemble` renders missing picture entries
+and stream-copies the cached 1920×1080 H.264 shots in order. The cache key hashes
+shot visual props, frame count, renderer sources, relevant bundled assets, the
+lockfile, and browser/platform identity. Audio, transcript-only edits, and a
+shot's position in the edit do not affect the key if its picture duration stays
+the same. Cache files live in `.cache/` under the output directory and can be
+removed to reclaim space. Each cached artifact is published by atomic rename.
+
+Assembly concatenates mono 48 kHz PCM at exactly 1,600 samples per frame before
+one AAC encode. This avoids per-shot AAC encoder padding in the final timeline.
+The SRT contains at most two lines per cue for ordinary prose. Cue subdivisions
+use estimated word timing and end within the source clip. Review the caption
+timing against recorded narration for publication.
+
+### Verification
+
+Type checking and all 49 unit tests passed. Both shipped legacy episodes
+reported zero QC errors and zero warnings. All 20 Linux visual goldens passed
+without updates, and the determinism PNGs were byte-identical.
+
+On the Linux cloud workstation with Chromium and FFmpeg 7.1.5, the pilot was
+65.667 seconds with 1,970 consecutive 1080p frames at 30 fps and an AAC audio
+stream. FFmpeg decoded the whole export without errors. Comparing the decoded
+audio to each of the eight source clips at 8 kHz found no offset at that sample
+resolution. The 16 SRT cues were ordered, at most two lines each, and within
+their corresponding voice windows. Frames sampled from every shot were inspected
+for framing and layout. The demo uses synthetic narration and remains an
+engineering sample for editorial review.
+
+The initial cloud assembly took about 5 minutes 22 seconds at concurrency 2.
+Warm reassembly with all eight picture cache hits took about 4.8 seconds. These
+measurements apply to this pilot and workstation. A three-shot integration test
+changed one equal-duration shot, forced its rerender, and reassembled 73 frames.
+The prior cache artifacts had identical SHA-256 values and two independent PNG
+previews of the edited shot were byte-identical. A different shot was also
+previewed in an episode containing an unavailable voice asset. Missing media,
+unknown shot IDs, conflicting timings, and malformed legacy JSON failed with
+actionable diagnostics.
+
+To check the exported streams and total frame count independently:
+
+```sh
+ffprobe -v error -show_entries stream=codec_name,codec_type,width,height,avg_frame_rate,nb_frames,duration -of json \
+  out/production/feedback-pilot/feedback-pilot.mp4
+ffmpeg -v error -i out/production/feedback-pilot/feedback-pilot.mp4 -f null -
+```
+
+### Current limits
+
+- The production CLI currently exports landscape. Legacy vertical export remains
+  available. Intentional vertical reframing is future work.
+- One voice asset per shot. Music, effects, overlapping narration, transitions,
+  forced alignment, rendered-frame QC and automated corrections remain outside
+  the production CLI. Shot exports use hard cuts and headline/diagram overlays.
+- No production Mac mini benchmark yet. Linux runs validate the pipeline and
+  provide a cloud baseline only.
+- The legacy ToonScript compiler rejects malformed input and conflicting or
+  missing measured audio durations. Run `npm run sync-audio` when replacing
+  legacy voice clips. Set actor `y` and `scale` at scene entry. Legacy actions
+  cannot animate those fields.
+
 ## 2. Status (current)
 
 | Area | State |
 | --- | --- |
-| Script → video (JSON) | Working: dialogue + narrated modes, 16:9 + 9:16 + thumbnail from one scene, voice-over timing |
+| Script → video (JSON) | Production CLI: standalone narrated shot JSON, 1080p, shot preview/render/cache, MP4 + SRT. Legacy ToonScript still supports dialogue, 16:9, 9:16 and thumbnails. |
 | Visual direction | **Approved: Cinematic Geometric Editorial.** Final visual standard NOT locked yet. Versatility benchmark + Person v2 awaiting review (section 3.2) |
 | Rig | Puppet rig v2: full skeleton, IK arms and legs, planted feet, look-at, lean/anticipation, secondary motion |
 | Props | Parenting to world / one hand / two-hand carry with smooth hand-offs |
 | Environments | **Space kit**: real 3D perspective with flat-shaded geometry, procedural architecture (atrium generator), lighting model, height fog. Plus the 2D parallax kit from v2 |
-| Concept visuals | Network kit in 2D and 3D (grow, recall wave, persistent glow, fade, dissolve), particle bursts. Charts/diagrams library not built yet |
+| Concept visuals | Network kit in 2D and 3D (grow, recall wave, persistent glow, fade, dissolve), particle bursts. Labeled flow diagram exposed in the production CLI. Broader chart library pending |
 | Cinematography | Shot sequencer + **semantic shot grammar** (establishing, closeUp, objectReveal, tracking, cutaway, scaleTransition); see `docs/SHOT_GRAMMAR.md` |
 | Look system | Shared identity (`src/themes/cge/identity.ts`): banded light, cool-shadow and warm-light tints, matte/metal/glass/water materials, low coloured haze, planar cast shadows |
 | Characters | **Person v2** (`src/themes/cge/Person.tsx`): faceted design system, proper hands, procedural cast variation; the Archivist is one preset. **Front, profile and back views** chosen automatically from the camera angle; **10 data-driven expressions** (`face.ts`). NOT locked |
 | Renderer | SVG Space renderer kept; Three.js evaluated with a measured spike; hybrid recommended (`docs/RENDERER_ASSESSMENT.md`) |
 | QC | Static QC (composition, readability, sync, movement, repetition, pacing), unit tests, visual regression, determinism, benchmarks |
-| Automation | Director / storyboard stage designed (section 5), not built |
+| Automation | Claude Code or Codex drives production through standalone JSON and the CLI. Embedded director deferred. |
 
 ## 3. Visual direction: the three prototypes
 
@@ -189,6 +324,9 @@ Four 5-second scenes plus two character design sheets, all in one identity and b
 
 ## 5. Target architecture (automation)
 
+The workflow below describes the longer-term design. The production MVP in §1.1
+uses Claude Code and Codex as external directors. An embedded LLM is deferred.
+
 JSON is the **intermediate representation**, produced by machines; humans review it
 but don't have to write it.
 
@@ -235,7 +373,7 @@ props[], actions[], camera: 'wide'|'medium'|'close'|..., onScreenText?, diagram?
 | Command | What it covers |
 | --- | --- |
 | `npm run typecheck` | TypeScript |
-| `npm test` | 44 unit tests: compiler validation and timing, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
+| `npm test` | 49 unit tests: compiler validation and timing, production plans and SRT, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
 | `npm run check` | Compiles every script and runs QC: overlap, off-screen/cropped speakers (both formats), fast speech, long Shorts subtitles, short captions, line overlap, sliding walks, pose flicker, repeated gestures, repeated backdrops, pacing metrics |
 | `npm run test:visual` | Renders 20 key frames and compares them with approved goldens (per platform), plus a determinism re-render. `-- --update` approves a new look |
 | `npm run benchmark` | Render speed, real-time factor, projected 10-minute render time, peak memory of the whole render process tree, versatility counts, authoring effort |
@@ -254,7 +392,7 @@ typically several times faster per core, but that is an estimate until measured.
 | --- | --- |
 | Visual quality | Prototypes A/B/C; protected by visual regression; judged by eye (no automatic score) |
 | Versatility | 5 cast presets, 8 poses × 7 expressions, 4 default backdrops + 1 modular set (11 module types), 3 themes |
-| Automation | Write JSON → `npm run check` → `npm run render`. Director stage not built, so the script is still written by hand (or by Claude in a session) |
+| Automation | Production check → preview one shot → render one shot or assemble the episode. Claude Code and Codex author the input JSON. |
 | Performance | See the table below |
 | Reusability | New JSON episodes need zero code. New *visual* actions still need code (roadmap 1.3) |
 
@@ -305,7 +443,7 @@ Ranked by visual impact × scalability ÷ effort, respecting dependencies.
 | 1.4 | Port default episodes to the theme contract + puppet v2 | ★★ | ★★★ | M | 0 |
 | 2.1 | Voice pipeline: TTS + forced alignment → word timing + visemes | ★★★ | ★★★ | M | — |
 | 2.2 | Diagram/chart library as script elements | ★★★ | ★★★ | M | 0 |
-| 2.3 | Storyboard IR + Director (LLM) + shot-selection rules | ★★★ | ★★★ | L | 1.3, 2.2 |
+| 2.3 | Expand CLI scene inputs and shot-selection rules | ★★★ | ★★★ | L | 1.3, 2.2 |
 | 2.4 | SRT export + YouTube metadata | ★ | ★★ | S | — |
 | 3.1 | Rendered-frame QC (contrast, DOM-based collisions, safe areas) | ★★ | ★★★ | M | — |
 | 3.2 | Environment sets + prop library for the chosen niche | ★★★ | ★★ | L (ongoing) | 0, 1.1 |

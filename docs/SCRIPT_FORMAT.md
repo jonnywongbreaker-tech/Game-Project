@@ -1,5 +1,7 @@
 # ToonScript format
 
+For standalone narrated shot JSON and the production CLI, see [PROJECT.md §1.1](../PROJECT.md#11-production-pipeline-mvp). This page documents the legacy ToonScript format.
+
 An episode is one JSON file in `src/episodes/`, registered in `src/episodes/scripts.ts`.
 Run `npm run check` after editing: it explains any mistake in plain words.
 
@@ -78,7 +80,7 @@ Beats run one after another. A beat is any combination of:
 | `camera` | Camera move starting with the beat (below). |
 | `caption` | On-screen text: `"BIG WORDS"` or `{"text": "1. TEACH IT", "style": "note", "hold": 6}`. Styles: `big`, `title`, `note`. |
 | `sfx` | Sound effect, e.g. `"sfx/pop.wav"` |
-| `dur` | Force the beat's length (seconds). |
+| `dur` | Set the beat's length (seconds) when no measured voice clip is attached. |
 | `pause` | Silence after the beat. |
 
 **Timing:** a spoken beat lasts as long as its audio, or an estimate from the text when there is no audio.

@@ -55,7 +55,7 @@ export interface ScriptActorState {
   scale?: number;
 }
 
-export interface ScriptAction extends ScriptActorState {
+export interface ScriptAction extends Omit<ScriptActorState, 'y' | 'scale'> {
   actor: string;
   /** Walk to this x. */
   walkTo?: number;
@@ -86,7 +86,7 @@ export interface ScriptBeat {
   narrate?: string;
   /** Voice-over clip in public/, e.g. "vo/ep001/003.mp3". Its length sets the beat's timing. */
   audio?: string;
-  /** Force the beat length in seconds. */
+  /** Set the beat length in seconds when no measured audio is attached. */
   dur?: number;
   /** Silence after this beat (seconds). */
   pause?: number;

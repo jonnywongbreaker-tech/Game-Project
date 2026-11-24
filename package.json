@@ -12,7 +12,9 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "test:visual": "tsx scripts/visual-test.ts",
     "benchmark": "tsx scripts/benchmark.ts",
-    "bake-textures": "tsx scripts/bake-textures.ts"
+    "bake-textures": "tsx scripts/bake-textures.ts",
+    "production": "tsx scripts/production.ts",
+    "pilot:voice": "tsx scripts/pilot-voice.ts"
   },
   "license": "UNLICENSED",
   "dependencies": {

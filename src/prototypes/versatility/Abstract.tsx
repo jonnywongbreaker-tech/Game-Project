@@ -86,4 +86,4 @@ const def: SceneDef = {
   title: {kicker: 'Versatility · Abstract', lines: ['Small habits.', 'Monumental results.'], start: 3.0, end: 5.2, top: 140, size: 84},
 };
 
-export const Abstract: React.FC = () => <SceneFrame def={def} />;
+export const Abstract: React.FC<{production?: boolean}> = ({production}) => <SceneFrame def={def} production={production} />;

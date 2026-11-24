@@ -21,7 +21,7 @@ export interface SceneDef {
 }
 
 /** Renders any SceneDef with the shared identity: look, grade, typography, fades. */
-export const SceneFrame: React.FC<{def: SceneDef}> = ({def}) => {
+export const SceneFrame: React.FC<{def: SceneDef; production?: boolean}> = ({def, production}) => {
   const {t, frame} = useTime();
   const {shot, local, index} = shotAt(def.shots, t);
   const cam = cameraAt(shot, local);
@@ -42,9 +42,11 @@ export const SceneFrame: React.FC<{def: SceneDef}> = ({def}) => {
       {def.overlay?.(t, {cam})}
       <AbsoluteFill style={{background: 'radial-gradient(ellipse at 50% 45%, transparent 62%, rgba(10,14,24,0.35) 100%)'}} />
       <TextureOverlay src={`textures/grain-${Math.floor(frame / 2) % 4}.png`} opacity={0.08} blend="overlay" />
+      {!production && <>
       <ChapterMark index={index + 1} label={shot.label} local={local} />
       <Display kicker={def.title.kicker} lines={def.title.lines} start={def.title.start} end={def.title.end} t={t} align={def.title.align} top={def.title.top ?? 170} size={def.title.size ?? 92} />
       <AbsoluteFill style={{background: '#000', opacity: fade}} />
+      </>}
     </AbsoluteFill>
   );
 };

@@ -8,6 +8,7 @@ import type {Keyframe} from '../engine/time';
 import {
   ACCESSORIES, BACKDROPS, type BackdropName, EXPRESSIONS, type Expression, GESTURES, HAIR_STYLES, POSES, type Pose,
 } from '../engine/vocab';
+import {validateScript} from './validate';
 import type {FocusSpec, ScriptActorState, ScriptBeat, ScriptCamera, ToonScript} from './types';
 
 export interface Issue {
@@ -78,7 +79,11 @@ const dir = (f: 'left' | 'right'): 1 | -1 => (f === 'left' ? -1 : 1);
 export type AudioDurations = Record<string, number>;
 
 export function compileScript(script: ToonScript, audioDurations: AudioDurations = {}): CompiledEpisode {
-  const issues: Issue[] = [];
+  const issues = validateScript(script);
+  if (issues.length) return {
+    id: 'Invalid', title: 'Invalid script', fps: 30, duration: 1, accent: '#ff7a3d', subtitles: 'none',
+    scenes: [], lines: [], captions: [], sfx: [], thumbnail: {at: 0}, speakers: {}, issues,
+  };
   const err = (where: string, message: string) => issues.push({level: 'error', where, message});
   const warn = (where: string, message: string) => issues.push({level: 'warning', where, message});
 
@@ -87,14 +92,14 @@ export function compileScript(script: ToonScript, audioDurations: AudioDurations
   const defaultPause = script.pause ?? 0.35;
 
   // ---- Cast ---------------------------------------------------------------
-  const cast: Record<string, CharacterDesign> = {};
+  const cast: Record<string, CharacterDesign> = Object.create(null);
   for (const [id, spec] of Object.entries(script.cast ?? {})) {
     if (id === NARRATOR) {
       err(`cast.${id}`, `"${NARRATOR}" is reserved for the off-screen voice.`);
       continue;
     }
     if (typeof spec === 'string') {
-      const preset = CAST_PRESETS[spec];
+      const preset = Object.hasOwn(CAST_PRESETS, spec) ? CAST_PRESETS[spec] : undefined;
       if (!preset) err(`cast.${id}`, `Unknown preset "${spec}". Available: ${Object.keys(CAST_PRESETS).join(', ')}`);
       else cast[id] = preset;
     } else {
@@ -123,7 +128,7 @@ export function compileScript(script: ToonScript, audioDurations: AudioDurations
     const ids = Object.keys(states);
     // Unplaced actors are spread evenly across the stage.
     const defaultX = (id: string) => states[id].x ?? (1920 * (ids.indexOf(id) + 1)) / (ids.length + 1);
-    const actors: Record<string, CompiledActor & {busyUntil: number; currentX: number; emoteEvents: [number, string | null, boolean][]}> = {};
+    const actors: Record<string, CompiledActor & {busyUntil: number; currentX: number; emoteEvents: [number, string | null, boolean][]}> = Object.create(null);
     ids.forEach((id) => {
       const design = cast[id];
       if (!design) {
@@ -207,14 +212,20 @@ export function compileScript(script: ToonScript, audioDurations: AudioDurations
         err(bw, '"text" needs a "say": "<actor or narrator>".');
       }
 
+      if (beat.audio && !(who && text)) err(bw, 'Audio requires a spoken line.');
       if (who && text) {
         let d = estimateDuration(text, cps);
         if (beat.audio) {
-          const real = audioDurations[beat.audio];
-          if (real === undefined) warn(bw, `No duration for "${beat.audio}" — run \`npm run sync-audio\`. Using an estimate.`);
-          else d = real;
-        }
-        if (beat.dur !== undefined) {
+          const real = Object.hasOwn(audioDurations, beat.audio) ? audioDurations[beat.audio] : undefined;
+          if (real === undefined || !Number.isFinite(real) || real <= 0) {
+            err(bw, `No valid duration for "${beat.audio}" — run npm run sync-audio.`);
+          } else {
+            d = real;
+            if (beat.dur !== undefined && Math.abs(beat.dur - real) > 0.001) {
+              err(bw, `dur conflicts with the measured audio duration (${real}s).`);
+            }
+          }
+        } else if (beat.dur !== undefined) {
           if (text.length / beat.dur > 22) warn(bw, `Line is very fast (${(text.length / beat.dur).toFixed(0)} chars/s).`);
           d = beat.dur;
         }
@@ -246,7 +257,6 @@ export function compileScript(script: ToonScript, audioDurations: AudioDurations
           actor.x.push([t0, actor.currentX], [t0, a.x]);
           actor.currentX = a.x;
         }
-        if (a.y !== undefined) actor.y = a.y;
         if (a.facing) actor.facing.push([t0, dir(a.facing)]);
         if (a.pose) setPose(actor, a.pose, t0, beatEnd() || t0 + 1.2, aw, err);
         if (a.expression) setExpression(actor, a.expression, t0, aw, err);

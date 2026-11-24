@@ -32,7 +32,7 @@ export const ScriptEpisode: React.FC<{episode: CompiledEpisode}> = ({episode}) =
       {episode.music && <Audio src={staticFile(episode.music.src)} volume={episode.music.volume} loop />}
       {episode.lines.map((l, i) =>
         l.audio ? (
-          <Sequence key={`vo${i}`} from={Math.round(l.start * fps)} layout="none">
+          <Sequence key={`vo${i}`} from={Math.round(l.start * fps)} durationInFrames={Math.max(1, Math.ceil((l.end - l.start) * fps))} layout="none">
             <Audio src={staticFile(l.audio)} />
           </Sequence>
         ) : null,

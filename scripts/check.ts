@@ -5,8 +5,8 @@
  *   npm run check -- --json  machine-readable output (for CI / other agents)
  * Exits non-zero if any episode has errors. Warnings never block.
  */
-import {existsSync} from 'node:fs';
-import {join} from 'node:path';
+import {existsSync, realpathSync, statSync} from 'node:fs';
+import {resolve, relative, isAbsolute} from 'node:path';
 import {SCRIPTS} from '../src/episodes/scripts';
 import audioDurations from '../src/generated/audio-durations.json';
 import {analyzeEpisode} from '../src/qc/analyze';
@@ -14,19 +14,37 @@ import {compileScript} from '../src/script/compile';
 
 const args = process.argv.slice(2);
 const json = args.includes('--json');
+// The render wrapper has already verified code-defined composition IDs.
+const allowCode = args.includes('--allow-code');
 const only = args.filter((a) => !a.startsWith('--'));
 let errors = 0;
 let warnings = 0;
 const out: unknown[] = [];
+for (const id of only) {
+  if (allowCode || SCRIPTS.some(script => script?.id === id)) continue;
+  const issue = {level: 'error', where: 'episode', message: `Unknown episode "${id}".`};
+  errors++;
+  if (json) out.push({id, issues: [issue]});
+  else console.error(issue.message);
+}
 
 for (const script of SCRIPTS) {
-  if (only.length && !only.includes(script.id)) continue;
+  if (only.length && !only.includes(script?.id)) continue;
   const ep = compileScript(script, audioDurations);
   const assets = [ep.music?.src, ...ep.lines.map((l) => l.audio), ...ep.sfx.map((s) => s.src)].filter(Boolean) as string[];
   for (const a of assets) {
-    if (!existsSync(join('public', a))) ep.issues.push({level: 'error', where: 'assets', message: `Missing file public/${a}`});
+    const root = realpathSync('public');
+    const file = resolve(root, a);
+    const inside = (p: string) => {
+      const path = relative(root, p);
+      return path !== '..' && !path.startsWith('../') && !isAbsolute(path);
+    };
+    if (isAbsolute(a) || !inside(file) || !existsSync(file) || !inside(realpathSync(file)) || !statSync(file).isFile()) {
+      ep.issues.push({level: 'error', where: 'assets', message: `Expected a local file inside public/: "${a}".`});
+    }
   }
-  const beats = script.scenes.reduce((n, s) => n + s.beats.length, 0);
+  const beats = ep.issues.some(issue => issue.level === 'error')
+    ? undefined : script.scenes.reduce((n, scene) => n + scene.beats.length, 0);
   const qc = analyzeEpisode(ep, {beats});
   const issues = [...ep.issues, ...qc.issues];
   const e = issues.filter((i) => i.level === 'error');
