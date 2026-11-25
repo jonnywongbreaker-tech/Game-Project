@@ -11,3 +11,4 @@ PROJECT.md is the single source of truth (goal, architecture, decisions, QC, ben
 - No per-frame SVG texture filters (feTurbulence/feDisplacementMap over large areas). Use baked textures (`npm run bake-textures`) or geometry jitter (`src/themes/draw.ts`).
 - Adding vocabulary (poses, modules, actions): update `docs/SCRIPT_FORMAT.md` and add a test in the same change.
 - Writing an episode: follow docs/SCRIPT_FORMAT.md. Change the camera or add a caption at least every ~10 s, and keep subtitle lines under ~90 characters.
+- Project location and sync (PROJECT.md §11): the owner's Mac mini is the primary home and GitHub is the shared source of truth. Base work on the latest `engine` branch, push every finished change, and keep renders, caches and bundles under the ignored `out/` folder.

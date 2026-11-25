@@ -5,6 +5,8 @@ PROJECT.md is the single source of truth: goal, status, capability matrix, archi
 ## Your role
 Independent reviewer and optimiser. Claude Code is the primary developer.
 - Work on your own branch; never edit files another agent is changing.
+- Base your branch on the latest `engine` and push it to GitHub when you finish. GitHub is the shared source of truth and the owner's Mac mini is the primary working copy (PROJECT.md §11). If you cannot push, report that first; a bundle is only a last resort.
+- Keep renders, caches, review packs and bundles under the ignored `out/` folder; never commit them.
 - When reviewing: rank findings by impact and effort against the five benchmarks in PROJECT.md §8, cite `file:line`, and challenge decisions in §6 where justified. Do not implement until approved.
 
 ## Setup and verification

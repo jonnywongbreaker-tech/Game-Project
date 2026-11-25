@@ -657,6 +657,33 @@ Ranked by visual impact × scalability ÷ effort, respecting dependencies.
 
 ## 11. Working with multiple agents
 
+### Where the project lives
+
+- **The owner's Mac mini is the primary home.** It holds the working copy, renders
+  full-length episodes, runs the Apple Silicon benchmarks and keeps all large output.
+  It is not left on for remote access.
+- **GitHub is the shared source of truth.** Claude Code and Codex cloud sessions work
+  from GitHub while the Mac is off. They run tests and short preview renders in the
+  cloud and push their branches. Nothing reaches the other side unless it is pushed.
+- **`engine` is the main branch.** It replaces `codex/production-pipeline-mvp`. The
+  old Flutter game on `main` and `claude/flutter-idle-rpg-mvp-*` is retired.
+- **Large files never go to git.** Renders, shot caches (`out/**/.cache`), review packs,
+  bundles and benchmark logs live under the ignored `out/` folder. Commit only code,
+  episode JSON, docs, small audio stems with their timing sidecars, and approved goldens.
+
+### Sync rules
+
+- **On the Mac:** `git pull` before starting and push before walking away.
+- **Agent sessions:** start from the latest `engine`, work on a separate branch, and
+  merge into `engine` only after the checks below pass. Always push the result. A
+  session that cannot push must say so immediately, not hand off a bundle silently.
+- **Hand-off notes** go in this file (or an `examples/*/HANDOFF.md` it links), never
+  only in a chat or a review tab.
+- Measurements from the cloud are labelled as Linux cloud results. Mac mini numbers
+  are only recorded from runs on the Mac.
+
+### Roles and checks
+
 - Claude Code is the primary developer; Codex reviews and optimises.
 - Each agent works on **its own git branch**; never edit the same files at the same time.
 - Reviews rank findings by impact and effort against the benchmarks (section 8) and cite `file:line`.
