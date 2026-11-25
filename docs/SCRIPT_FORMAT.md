@@ -1,6 +1,6 @@
 # ToonScript format
 
-For standalone narrated shot JSON and the production CLI, see [PROJECT.md §1.1](../PROJECT.md#11-production-pipeline-mvp). This page documents the legacy ToonScript format.
+For standalone narrated shot JSON and the production CLI, see [PROJECT.md §1.1](../PROJECT.md#11-repeatable-production-pipeline). This page documents the legacy ToonScript format.
 
 An episode is one JSON file in `src/episodes/`, registered in `src/episodes/scripts.ts`.
 Run `npm run check` after editing: it explains any mistake in plain words.

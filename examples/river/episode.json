@@ -1,0 +1,22 @@
+{
+  "id": "river-path",
+  "title": "Why Rivers Bend",
+  "shots": [
+    {
+      "id": "opening", "template": "card", "headline": "Why rivers bend", "tail": 0.4,
+      "voice": {"file": "../../out/river-voice/opening.wav", "text": "A river can wind across a flat valley. Each bend changes where the water cuts into the bank and where it leaves sediment behind."}
+    },
+    {
+      "id": "valley", "template": "nature", "headline": "The channel can move", "tail": 0.4,
+      "voice": {"file": "../../out/river-voice/valley.wav", "text": "Look at the channel from above. The water follows curves, but the banks are also changing as the river flows."}
+    },
+    {
+      "id": "banks", "template": "flow", "headline": "One bend, two banks", "labels": ["Outer bank erodes", "Inner bank builds"], "tail": 0.4,
+      "voice": {"file": "../../out/river-voice/banks.wav", "text": "On the outside of a bend, faster water can erode the bank. On the inside, slower water often drops sand and gravel."}
+    },
+    {
+      "id": "migration", "template": "flow", "headline": "How a bend migrates", "labels": ["Cut outside", "Deposit inside", "Shift the channel"], "tail": 0.4,
+      "voice": {"file": "../../out/river-voice/migration.wav", "text": "Over time those two changes can move the bend sideways. A winding river is always reshaping its path."}
+    }
+  ]
+}

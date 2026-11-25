@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
+import {mkdtempSync, rmSync, writeFileSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {test} from 'node:test';
+import {audioDigest} from '../scripts/lib/production-alignment';
 import {parseEpisode, planEpisode, subtitles} from '../scripts/lib/production-plan';
 
 const input = {
@@ -46,4 +50,42 @@ test('SRT wraps long narration into consecutive cues of at most two lines', () =
   assert.ok(cues.every(cue => cue.split('\n').length <= 4));
   assert.equal(cues.map(cue => cue.split('\n').slice(2).join(' ')).join(' '), phrase);
   assert.match(cues[1], /--> 00:00:08,000/);
+});
+
+test('word alignment changes SRT boundaries and rejects stale or invalid sidecars', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'toon-alignment-test-'));
+  try {
+    const audio = join(dir, 'voice.wav');
+    const episodePath = join(dir, 'episode.json');
+    writeFileSync(audio, 'audio version one');
+    const text = 'A river shapes the valley where people live. Erosion removes material from the outside bank, while sediment accumulates on the inside.';
+    const episode = parseEpisode({...input, shots: [{
+      ...input.shots[0], voice: {file: 'voice.wav', text},
+    }]});
+    const tokens = text.split(/\s+/);
+    const timing = {
+      version: 1, source: 'test', audioSha256: audioDigest(audio), transcript: text,
+      words: tokens.map((word, index) => ({text: word, start: (index + 1) / 4, end: (index + 1) / 4 + 0.125})),
+    };
+    const meta = audio + '.timing.json';
+    writeFileSync(meta, JSON.stringify(timing));
+    const plan = planEpisode(episodePath, episode, () => 8);
+    assert.equal(plan.shots[0].voice?.alignment?.source, 'test');
+    const cues = subtitles(plan).trim().split('\n\n');
+    assert.equal(cues.length, 2);
+    assert.match(cues[0], /00:00:00,250 --> /);
+    const secondWord = cues[1].split('\n')[2].split(' ')[0];
+    const startMs = timing.words.find(word => word.text === secondWord)!.start * 1000;
+    const start = new Date(startMs).toISOString().slice(11, 23).replace('.', ',');
+    assert.ok(cues[1].includes(start + ' --> '));
+    assert.doesNotMatch(cues[1], / --> 00:00:08,000/);
+    const invalid = {...timing, words: [{text: tokens[0], start: 0, end: 0}, ...timing.words.slice(1)]};
+    writeFileSync(meta, JSON.stringify(invalid));
+    assert.throws(() => planEpisode(episodePath, episode, () => 8), /invalid timing for word 1/);
+    writeFileSync(meta, JSON.stringify(timing));
+    writeFileSync(audio, 'audio version two');
+    assert.throws(() => planEpisode(episodePath, episode, () => 8), /audio or transcript has changed/);
+  } finally {
+    rmSync(dir, {recursive: true, force: true});
+  }
 });

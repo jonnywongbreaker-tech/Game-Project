@@ -3,6 +3,7 @@ import {readFileSync, statSync} from 'node:fs';
 import {dirname, isAbsolute, resolve} from 'node:path';
 import {FPS, TEMPLATES, type EpisodeInput, type RenderProps, type ShotInput, type Template} from '../../src/production/types';
 import {wordTimings} from '../../src/engine/speech';
+import {loadAlignment, type Alignment} from './production-alignment';
 import {record} from '../../src/script/validate';
 
 type PlannedShot = {
@@ -10,7 +11,7 @@ type PlannedShot = {
   startFrame: number;
   endFrame: number;
   visual: RenderProps;
-  voice?: {file: string; text: string; seconds: number};
+  voice?: {file: string; text: string; seconds: number; alignment?: Alignment};
 };
 
 export interface EpisodePlan {
@@ -126,7 +127,8 @@ export function planEpisode(file: string, episode = readEpisode(file), probe = p
     if (shot.voice) {
       const filePath = resolve(dirname(file), shot.voice.file);
       try {
-        voice = {...shot.voice, seconds: seconds(probe(filePath), 'audio', 1 / FPS, 120)};
+        const measured = seconds(probe(filePath), 'audio', 1 / FPS, 120);
+        voice = {...shot.voice, seconds: measured, alignment: loadAlignment(filePath, shot.voice.text, measured)};
       } catch (error) {
         throw new Error(`Shot "${shot.id}" voice.file "${shot.voice.file}": ${(error as Error).message}`);
       }
@@ -155,16 +157,22 @@ export function subtitles(plan: EpisodePlan): string {
     if (!voice) continue;
     const start = startFrame / plan.fps;
     const end = start + voice.seconds;
-    const words = wordTimings(voice.text, start, end);
-    const wrapped: {text: string; start: number}[] = [];
+    const words = voice.alignment?.words.map(word => ({...word, start: start + word.start, end: start + word.end}))
+      ?? wordTimings(voice.text, start, end);
+    const wrapped: {text: string; start: number; end: number}[] = [];
     for (const word of words) {
       const row = wrapped[wrapped.length - 1];
-      if (!row || row.text.length + 1 + word.text.length > 46) wrapped.push({text: word.text, start: word.start});
-      else row.text += ' ' + word.text;
+      if (!row || row.text.length + 1 + word.text.length > 46) wrapped.push(word);
+      else {
+        row.text += ' ' + word.text;
+        row.end = word.end;
+      }
     }
     for (let row = 0; row < wrapped.length; row += 2) {
       const cueStart = Math.ceil(wrapped[row].start * 1000);
-      const cueEnd = Math.floor((wrapped[row + 2]?.start ?? end) * 1000);
+      const lastWord = wrapped[Math.min(row + 1, wrapped.length - 1)];
+      const next = wrapped[row + 2]?.start ?? end;
+      const cueEnd = Math.floor((voice.alignment ? Math.min(next, lastWord.end + 0.15) : next) * 1000);
       if (cueEnd <= cueStart) continue;
       const text = wrapped.slice(row, row + 2).map(item => item.text).join('\n')
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

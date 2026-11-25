@@ -11,7 +11,7 @@ per video, near-zero generation cost, and visual quality that competes with
 established educational and entertainment channels. Niche-independent: swapping the
 theme and asset kits retargets the engine.
 
-## 1.1 Production pipeline MVP
+## 1.1 Repeatable production pipeline
 
 Use the production CLI for new narrated episodes. Claude Code and Codex author the
 episode JSON and run the same commands. The production entry point uses Remotion
@@ -19,32 +19,38 @@ and the existing SVG scene kits. It accepts an episode from disk with no static
 registration or network assets. The earlier ToonScript demos and Studio
 compositions are still available under their existing commands.
 
-### Reproduce the feedback pilot
+### Director workflow and handoff
 
-From the repository root, use Node.js 20+, FFmpeg with ffprobe, and local
-Chrome/Chromium. Set `REMOTION_BROWSER_EXECUTABLE` to the browser executable to
-use an existing installation offline. The sample voice generator uses FFmpeg's
-`flite` filter on Linux or the built-in `say` command on macOS. For a different
-Linux FFmpeg build, supply your own local WAV files at the manifest paths.
+Run from the repository root with Node.js 20+, FFmpeg with ffprobe, and
+Chrome/Chromium. Set `REMOTION_BROWSER_EXECUTABLE` to an installed browser for
+offline renders. The example voice generator needs Python 3 and the Flite SLT
+shared voice library on Linux. macOS uses the built-in `say` command.
 
 ```sh
 npm ci
-npm run pilot:voice
-npm run production -- check examples/pilot/episode.json
-npm run production -- preview examples/pilot/episode.json loop --frame 100
-npm run production -- render examples/pilot/episode.json loop
-npm run production -- assemble examples/pilot/episode.json
-npm run production -- srt examples/pilot/episode.json
+npm run --silent production -- capabilities
+npm run production:voice -- examples/river/episode.json
+npm run --silent production -- check examples/river/episode.json
+npm run production -- preview examples/river/episode.json valley --frame 15
+npm run production -- contact examples/river/episode.json
+npm run production -- assemble examples/river/episode.json
 npm run typecheck && npm test && npm run check
 npm run test:visual
 ```
 
-Assembly writes `out/production/feedback-pilot/feedback-pilot.mp4` with matching
-`.json` (timing manifest) and `.srt` files. The pilot contains eight narrated
-shots and demonstrates repeated templates and a thermostat feedback diagram.
-Narration is generated locally for reproducibility. The voice and duration can
-vary across operating systems. Commands that write files accept `--out <dir>`.
-Keep separate output directories for concurrent exports of different revisions.
+The registry enumerates the production commands, flags, templates, input
+requirements, caption sidecar format, and utility commands. `preview` defaults
+to a 480 × 270 PNG. Use `--width 1920` to request a full-resolution still.
+`contact` renders a midpoint per shot and reuses one browser and bundle across
+the session. Each page contains up to 24 thumbnails in four columns, and
+`contact.json` maps shot IDs to one-based row and column numbers.
+
+Use `examples/river/episode.json` as a standalone starting point for a new
+episode. It produces *Why Rivers Bend* using only card, nature, and flow
+templates. To reproduce the thermostat pilot instead, run `npm run pilot:voice`
+and pass `examples/pilot/episode.json` to the same production commands. Assembly
+writes an MP4, SRT, and JSON manifest under `out/production/<episode-id>/` by
+default. Use separate output directories for concurrent exports.
 
 ### Episode format and execution
 
@@ -83,25 +89,83 @@ with integer `startFrame` and exclusive `endFrame` values at 30 fps. Use
 `npm run --silent production -- check <episode.json>` for agent-readable JSON.
 Shot preview and render need media for the selected shot only.
 
-`preview` writes a PNG under `shots/` and `render` writes a narrated shot MP4.
-Use `render --force` to regenerate the picture for that shot, or edit its JSON
-and let the cache miss naturally. `assemble` renders missing picture entries
-and stream-copies the cached 1920×1080 H.264 shots in order. The cache key hashes
-shot visual props, frame count, renderer sources, relevant bundled assets, the
-lockfile, and browser/platform identity. Audio, transcript-only edits, and a
-shot's position in the edit do not affect the key if its picture duration stays
-the same. Cache files live in `.cache/` under the output directory and can be
-removed to reclaim space. Each cached artifact is published by atomic rename.
+### Cache and recovery
+
+Edit the JSON for one shot and run
+`npm run production -- render <episode.json> <shot-id>`. Then run
+`npm run production -- assemble <episode.json>` with the same output directory.
+The isolated render writes `shots/<shot-id>.mp4` with audio. Assembly logs each
+`Cache hit` and `Rendering` decision to stderr. Use `render --force` to regenerate
+the selected picture explicitly.
+
+The picture key hashes visual props, frame count, renderer code and bundled
+assets, the lockfile, and browser/platform identity. Audio or transcript-only
+changes reuse the picture when shot length is unchanged. Assembly regenerates
+the audio and subtitles for the current inputs. Completed cached pictures are
+published atomically under `.cache/` and checked for H.264, dimensions, frame
+rate and frame count before reuse. Rerun the same assembly after interruption.
+Files staged under `.write-*` are ignored. A hard kill can leave those
+directories behind. Remove them only after all renders in that output directory
+have stopped.
+
+### Subtitle alignment
 
 Assembly concatenates mono 48 kHz PCM at exactly 1,600 samples per frame before
-one AAC encode. This avoids per-shot AAC encoder padding in the final timeline.
-The SRT contains at most two lines per cue for ordinary prose. Cue subdivisions
-use estimated word timing and end within the source clip. Review the caption
-timing against recorded narration for publication.
+one AAC encode. The CLI looks beside each narration asset for
+`<voice.file>.timing.json` and uses its word timings for SRT directly. The
+Linux voice generator writes the WAV and timestamps from one Flite synthesis.
+For recorded or macOS-generated narration, supply timestamps from your
+alignment tool or edit explicitly measured boundaries into the sidecar.
+Automatic forced alignment of arbitrary recorded speech is pending.
+
+A version 1 sidecar contains `source` (provider name), `audioSha256` (hex SHA-256
+of the exact exported narration file), `transcript` (verbatim `voice.text`),
+and `words` (one ordered `{text, start, end}` object per whitespace-separated
+word). Timestamps are seconds relative to the audio file. The CLI rejects
+stale hashes, transcript discrepancies, overlaps, and out-of-range timestamps.
+Without a sidecar, the CLI can estimate captions and reports the affected shot
+IDs at export. Use `--require-alignment` on `check`, `srt`, or `assemble` for
+exports that must use aligned captions.
+
+### Mac mini benchmark
+
+Generate the voice files first. Set `REMOTION_BROWSER_EXECUTABLE` to your
+local Chromium or Chrome binary. Start with concurrency 2 and a fresh output
+directory per run. Use the feedback pilot for the long benchmark and the river
+episode for a shorter check.
+
+```sh
+npm run pilot:voice
+REMOTION_BROWSER_EXECUTABLE="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  npm run production:benchmark -- examples/pilot/episode.json out/benchmarks/mac-mini-2 2
+```
+
+The benchmark records cold and warm wall time, sampled peak process-tree RSS,
+shot reuse, video duration and system details in `benchmark.json`. Cold and
+warm logs are stored beside it. Voice synthesis runs outside the timed stages.
+Peak RSS is sampled every 200 ms and may count shared pages more than once.
+Mac mini performance has yet to be measured.
 
 ### Verification
 
-Type checking and all 49 unit tests passed. Both shipped legacy episodes
+On Linux, the standalone *Why Rivers Bend* episode exported 870 frames
+(29.0 seconds) at 1080p and 30 fps with AAC narration and aligned SRT. FFmpeg
+decoded it end to end. Its four-shot benchmark at concurrency 2 measured
+144.31 seconds cold with 2.54 GiB peak process-tree RSS. The warm run reused
+all four pictures in 2.52 seconds with 0.24 GiB peak RSS.
+
+In an integration run, an equal-duration headline edit rendered only the
+`banks` shot. Reassembly then hit all four cache entries, and the prior
+pictures retained their SHA-256 hashes. A hard kill while a later edit to
+`migration` was staged preserved the last assembled MP4. The retry reused
+the three completed pictures and rebuilt only `migration`. Replacing that
+cache entry with invalid MP4 bytes triggered the same isolated rebuild.
+The final 870-frame output decoded successfully. A 480 × 270 shot preview
+and a four-cell contact sheet matched their requested frames and shot order.
+The feedback pilot also exported 16 aligned cues directly through
+`production -- srt --require-alignment`.
+
+Type checking and all 50 unit tests passed. Both shipped legacy episodes
 reported zero QC errors and zero warnings. All 20 Linux visual goldens passed
 without updates, and the determinism PNGs were byte-identical.
 
@@ -137,7 +201,7 @@ ffmpeg -v error -i out/production/feedback-pilot/feedback-pilot.mp4 -f null -
 - The production CLI currently exports landscape. Legacy vertical export remains
   available. Intentional vertical reframing is future work.
 - One voice asset per shot. Music, effects, overlapping narration, transitions,
-  forced alignment, rendered-frame QC and automated corrections remain outside
+  automatic alignment of arbitrary recorded speech, rendered-frame QC and automated corrections remain outside
   the production CLI. Shot exports use hard cuts and headline/diagram overlays.
 - No production Mac mini benchmark yet. Linux runs validate the pipeline and
   provide a cloud baseline only.
@@ -150,7 +214,7 @@ ffmpeg -v error -i out/production/feedback-pilot/feedback-pilot.mp4 -f null -
 
 | Area | State |
 | --- | --- |
-| Script → video (JSON) | Production CLI: standalone narrated shot JSON, 1080p, shot preview/render/cache, MP4 + SRT. Legacy ToonScript still supports dialogue, 16:9, 9:16 and thumbnails. |
+| Script → video (JSON) | Production CLI: standalone narrated shot JSON, 1080p, shot previews and contact sheets, cache recovery, aligned SRT, MP4. Legacy ToonScript still supports dialogue, 16:9, 9:16 and thumbnails. |
 | Visual direction | **Approved: Cinematic Geometric Editorial.** Final visual standard NOT locked yet. Versatility benchmark + Person v2 awaiting review (section 3.2) |
 | Rig | Puppet rig v2: full skeleton, IK arms and legs, planted feet, look-at, lean/anticipation, secondary motion |
 | Props | Parenting to world / one hand / two-hand carry with smooth hand-offs |
@@ -373,7 +437,7 @@ props[], actions[], camera: 'wide'|'medium'|'close'|..., onScreenText?, diagram?
 | Command | What it covers |
 | --- | --- |
 | `npm run typecheck` | TypeScript |
-| `npm test` | 49 unit tests: compiler validation and timing, production plans and SRT, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
+| `npm test` | 50 unit tests: compiler validation and timing, production plans and SRT, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
 | `npm run check` | Compiles every script and runs QC: overlap, off-screen/cropped speakers (both formats), fast speech, long Shorts subtitles, short captions, line overlap, sliding walks, pose flicker, repeated gestures, repeated backdrops, pacing metrics |
 | `npm run test:visual` | Renders 20 key frames and compares them with approved goldens (per platform), plus a determinism re-render. `-- --update` approves a new look |
 | `npm run benchmark` | Render speed, real-time factor, projected 10-minute render time, peak memory of the whole render process tree, versatility counts, authoring effort |

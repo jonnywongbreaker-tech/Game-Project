@@ -9,8 +9,9 @@ import {dirname, join, resolve} from 'node:path';
 import {pipeline} from 'node:stream/promises';
 import {bundle} from '@remotion/bundler';
 import {ensureBrowser, openBrowser, renderMedia, renderStill, selectComposition} from '@remotion/renderer';
-import {FPS, SAMPLE_RATE, type RenderProps} from '../../src/production/types';
+import {FPS, HEIGHT, SAMPLE_RATE, WIDTH, type RenderProps} from '../../src/production/types';
 import {browserExecutable} from './remotion';
+import {capabilities} from './production-capabilities';
 import type {EpisodePlan} from './production-plan';
 
 type PlannedShot = EpisodePlan['shots'][number];
@@ -56,6 +57,20 @@ function rendererFingerprint(chrome: string) {
   return hash.digest('hex');
 }
 
+function validPicture(file: string, frames: number) {
+  if (!existsSync(file)) return false;
+  try {
+    const metadata = execFileSync('ffprobe', ['-v', 'error', '-protocol_whitelist', 'file,pipe',
+      '-show_entries', 'stream=codec_name,width,height,r_frame_rate,nb_frames', '-of', 'json', file],
+    {encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe']});
+    const [stream, extra] = JSON.parse(metadata).streams;
+    return !extra && stream.codec_name === 'h264' && stream.width === WIDTH && stream.height === HEIGHT
+      && stream.r_frame_rate === `${FPS}/1` && Number(stream.nb_frames) === frames;
+  } catch {
+    return false;
+  }
+}
+
 export class ShotRenderer {
   private scratch?: string;
   private serveUrl?: string;
@@ -86,15 +101,15 @@ export class ShotRenderer {
     return {...shared, composition};
   }
 
-  async preview(shot: PlannedShot, frame: number, file: string) {
+  async preview(shot: PlannedShot, frame: number, file: string, width: number) {
     const options = await this.composition(shot.visual);
-    await publish(file, temp => renderStill({...options, frame, output: temp}));
+    await publish(file, temp => renderStill({...options, frame, output: temp, scale: width / WIDTH}));
   }
 
   async video(shot: PlannedShot, cache: string, force = false, concurrency = 2) {
     const key = digest(JSON.stringify([this.fingerprint, shot.visual]));
     const file = join(cache, key + '.mp4');
-    if (!force && existsSync(file)) {
+    if (!force && validPicture(file, shot.visual.frames)) {
       console.error(`Cache hit ${shot.id}`);
       return file;
     }
@@ -118,7 +133,7 @@ export class ShotRenderer {
 
 function shotPcm(shot: PlannedShot, episodeFile: string, output: string) {
   const input = shot.voice
-    ? ['-i', resolve(dirname(episodeFile), shot.voice.file)]
+    ? ['-protocol_whitelist', 'file,pipe', '-i', resolve(dirname(episodeFile), shot.voice.file)]
     : ['-f', 'lavfi', '-i', `anullsrc=r=${SAMPLE_RATE}:cl=mono`];
   const samples = shot.visual.frames * samplesPerFrame;
   const filter = `aresample=${SAMPLE_RATE},apad=whole_len=${samples},atrim=end_sample=${samples},asetpts=N/SR/TB`;
@@ -150,7 +165,8 @@ export async function assemble(plan: EpisodePlan, episodeFile: string, videos: s
     plan.shots.forEach((shot, index) => {
       const name = `shot-${index}.mp4`;
       symlinkSync(resolve(videos[index]), join(scratch, name));
-      entries.push(`file ${name}`, `duration ${(shot.visual.frames / FPS).toFixed(9)}`);
+      const micros = (frames: number) => Math.round(frames * 1_000_000 / FPS);
+      entries.push(`file ${name}`, `duration ${((micros(shot.endFrame) - micros(shot.startFrame)) / 1_000_000).toFixed(6)}`);
     });
     writeFileSync(list, entries.join('\n') + '\n');
     // Concatenate raw samples and encode once to avoid AAC priming at every cut.
@@ -163,6 +179,35 @@ export async function assemble(plan: EpisodePlan, episodeFile: string, videos: s
     }
     await pipeline(audioChunks(), createWriteStream(audio));
     await publish(output, temp => mix(['-f', 'concat', '-safe', '1', '-i', list], audio, temp));
+  } finally {
+    rmSync(scratch, {recursive: true, force: true});
+  }
+}
+
+export async function contactSheet(renderer: ShotRenderer, plan: EpisodePlan, output: string) {
+  const {defaultWidth, contactRows, contactColumns} = capabilities.preview;
+  const scratch = mkdtempSync(join(tmpdir(), 'toon-contact-'));
+  const sheets: {file: string; cells: {id: string; frame: number; row: number; column: number}[]}[] = [];
+  const pageSize = contactRows * contactColumns;
+  try {
+    for (let offset = 0; offset < plan.shots.length; offset += pageSize) {
+      const shots = plan.shots.slice(offset, offset + pageSize);
+      const cells = [];
+      for (const [index, shot] of shots.entries()) {
+        const frame = Math.floor(shot.visual.frames / 2);
+        await renderer.preview(shot, frame, join(scratch, `thumb-${index}.png`), defaultWidth);
+        cells.push({id: shot.id, frame, row: Math.floor(index / contactColumns) + 1, column: index % contactColumns + 1});
+      }
+      const sheet = `contact-${sheets.length + 1}.png`;
+      const rows = Math.ceil(shots.length / contactColumns);
+      await publish(join(output, sheet), temp => ffmpeg('-start_number', '0', '-i', join(scratch, 'thumb-%d.png'),
+        '-vf', `tile=${contactColumns}x${rows}:nb_frames=${shots.length}:padding=4`, '-frames:v', '1', '-threads', '1', temp));
+      for (const index of shots.keys()) rmSync(join(scratch, `thumb-${index}.png`));
+      sheets.push({file: sheet, cells});
+    }
+    const index = join(output, 'contact.json');
+    await publish(index, temp => writeFileSync(temp, JSON.stringify({episode: plan.id, sheets}, null, 2) + '\n'));
+    return index;
   } finally {
     rmSync(scratch, {recursive: true, force: true});
   }

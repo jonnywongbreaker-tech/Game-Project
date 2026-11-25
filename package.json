@@ -14,7 +14,9 @@
     "benchmark": "tsx scripts/benchmark.ts",
     "bake-textures": "tsx scripts/bake-textures.ts",
     "production": "tsx scripts/production.ts",
-    "pilot:voice": "tsx scripts/pilot-voice.ts"
+    "pilot:voice": "tsx scripts/pilot-voice.ts",
+    "production:voice": "tsx scripts/pilot-voice.ts",
+    "production:benchmark": "python3 scripts/production-benchmark.py"
   },
   "license": "UNLICENSED",
   "dependencies": {
