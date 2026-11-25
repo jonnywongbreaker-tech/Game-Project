@@ -54,7 +54,7 @@ function steps(t: number): Poly[] {
 }
 const tween01 = (t: number, a: number, b: number) => Math.max(0, Math.min(1, (t - a) / (b - a)));
 
-const def: SceneDef = {
+export const def: SceneDef = {
   duration: 5,
   shots: [
     closeUp({label: 'One small thing', start: 0, end: RELEASE + 0.15, subject: {pos: [HAND[0] + 0.05, HAND[1] + 0.15, HAND[2]], size: 0.9, facing: [0, 0, 1]}, angle: 62, elevation: 4, fov: 30, blur: 4}),

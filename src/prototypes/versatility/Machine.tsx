@@ -66,7 +66,7 @@ const CALLOUTS: {label: string; at: V3; dx: number; dy: number}[] = [
   {label: 'Piston', at: [G3.center[0], 2.9, 0.1], dx: 150, dy: -90},
 ];
 
-const def: SceneDef = {
+export const def: SceneDef = {
   duration: 5,
   shots: [
     objectReveal({label: 'The machine', start: 0, end: 3.0, subject: {pos: [0.1, 2.15, 0], size: 4.6}, startAzimuth: -42, orbit: 46, elevation: 14, fov: 40}),

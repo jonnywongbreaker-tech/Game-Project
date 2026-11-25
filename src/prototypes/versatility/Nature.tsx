@@ -52,7 +52,7 @@ const glide = (t: number): V3 => {
 };
 const STAND: V3 = [riverX(52) - 9, height(riverX(52) - 9, 52), 52];
 
-const def: SceneDef = {
+export const def: SceneDef = {
   duration: 5,
   shots: [tracking({label: 'The valley', start: 0, end: 5, follow: glide, size: 14, side: -1, elevation: 30, fov: 54, mode: 'chase', distance: 24, lead: 1.4})],
   build: (t) => {

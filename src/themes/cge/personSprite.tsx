@@ -38,6 +38,7 @@ export function personSprite(p: PersonPlacement, lights: Light[]): Sprite {
   return {
     pos: p.pos,
     bias: -0.05,
+    extent: [0.62, 1.72 * p.spec.height],
     render: ({x, y, scale: s, view: view3}) => {
       const ahead = projectPoint(view3, add(p.pos, scale(p.heading, 0.6)));
       const here = projectPoint(view3, p.pos);

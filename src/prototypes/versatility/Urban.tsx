@@ -69,7 +69,7 @@ const LIGHTS: Light[] = [
   {kind: 'directional', dir: SUN_DIR, color: '#FFF0D8', intensity: 0.95},
 ];
 
-const def: SceneDef = {
+export const def: SceneDef = {
   duration: 5,
   shots: [
     establishing({label: 'The city', start: 0, end: 2.6, stage: {pos: [8, 5, 0], size: 52}, azimuth: -90, elevation: 21, fov: 52}),
