@@ -7,13 +7,14 @@ import {rigTest} from './episodes/RigTest';
 import {MEMORY_BENCHMARKS} from './prototypes/memory';
 import {VERSATILITY} from './prototypes/versatility';
 import {VIBRANT} from './prototypes/vibrant';
+import {LIBRARY_PILOT} from './prototypes/library-pilot';
 import {SCRIPTS} from './episodes/scripts';
 import audioDurations from './generated/audio-durations.json';
 import {compileScript} from './script/compile';
 import {ScriptEpisode} from './script/ScriptEpisode';
 
 /** Code-written episodes (escape hatch). JSON episodes live in episodes/scripts.ts. */
-const CODE_EPISODES: CodeEpisode[] = [rigTest, ...MEMORY_BENCHMARKS, ...VERSATILITY, ...VIBRANT];
+const CODE_EPISODES: CodeEpisode[] = [rigTest, ...MEMORY_BENCHMARKS, ...VERSATILITY, ...VIBRANT, ...LIBRARY_PILOT];
 
 interface Registered {
   id: string;
