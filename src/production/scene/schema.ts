@@ -58,6 +58,8 @@ export const sceneSchema = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   ...obj({
     entities: list(obj({...state, id, size: vector(.01, 200), seed: text(64),
+      opening: tuple(number(.01, .98), number(.01, .98), number(0, .49)),
+      outline: list(tuple(number(-4, 4), number(0, 4)), 64, 3),
       material: one(['matte', 'metal', 'glass', 'water', 'flat'])}, 'id', 'asset'), 64, 1),
     actions: list(obj({target: id, at: time, duration: time, ease: easing,
       set: {...obj(state), minProperties: 1}}, 'target', 'at', 'set'), 256),
@@ -69,6 +71,7 @@ export const sceneSchema = {
     annotations: list(obj({...window, ...style, text: text(110), subject: id,
       atScreen: tuple(number(0, 1), number(0, 1)), offset: tuple(number(-1000, 1000), number(-1000, 1000))}, 'text'), 48),
     links: list(obj({...window, from: id, to: id, color, width: number(1, 32), arrow: bool}, 'from', 'to'), 64),
+    paths: list(obj({...window, points: list(vector(), 80, 2), color, width: number(1, 32), arrow: bool}, 'points'), 64),
   }, 'entities', 'camera'),
 };
 
@@ -127,6 +130,9 @@ export function readScene(input: unknown, where: string): Scene {
   if (entities.size !== scene.entities.length) fail('entity IDs must be unique');
   const subject = (id: string) => { if (!entities.has(id)) fail(`unknown subject "${id}"`); };
   const checkState = (value: Partial<State>, base: State['asset'], id: string) => {
+    if (value.asset && value.asset !== base && [base, value.asset].some(asset => asset === 'aperture' || asset === 'outline')) {
+      fail(`"${id}" cannot switch to or from a parameterized mesh`);
+    }
     if (value.asset && value.asset !== base && !([base, value.asset] as string[]).every(asset => PROPS.some(prop => prop === asset))) {
       fail(`"${id}" may swap assets only within the prop family`);
     }
@@ -137,6 +143,18 @@ export function readScene(input: unknown, where: string): Scene {
   };
   for (const entity of scene.entities) {
     checkState(entity, entity.asset, entity.id);
+    if (Boolean(entity.opening) !== (entity.asset === 'aperture')) fail(`"${entity.id}" requires opening exactly for aperture assets`);
+    if (entity.opening && entity.opening[2] > Math.min(entity.opening[0], entity.opening[1]) / 2) {
+      fail(`"${entity.id}" opening radius exceeds half its smaller dimension`);
+    }
+    if (Boolean(entity.outline) !== (entity.asset === 'outline')) fail(`"${entity.id}" requires outline points exactly for outline assets`);
+    if (entity.outline) {
+      const area = entity.outline.reduce((sum, [x, y], i, points) => {
+        const [nx, ny] = points[(i + 1) % points.length];
+        return sum + x * ny - y * nx;
+      }, 0);
+      if (Math.abs(area) < 1e-6) fail(`"${entity.id}" outline must enclose an area`);
+    }
     if (entity.asset === 'person' && (entity.size || entity.material)) {
       fail(`"${entity.id}" uses uniform scale and the person material`);
     }
@@ -175,7 +193,7 @@ export function readScene(input: unknown, where: string): Scene {
     subject(link.to);
     if (link.from === link.to) fail('links need two distinct subjects');
   }
-  for (const overlay of [...(scene.annotations ?? []), ...(scene.links ?? [])]) {
+  for (const overlay of [...(scene.annotations ?? []), ...(scene.links ?? []), ...(scene.paths ?? [])]) {
     if (overlay.until !== undefined && (overlay.at ?? 0) + (overlay.reveal ?? 0) > overlay.until + TIME_EPSILON) {
       fail('overlay reveal must finish by its until time');
     }
@@ -187,7 +205,7 @@ export function validateSceneDuration(scene: Scene, seconds: number, where: stri
   const bounds = [
     ...(scene.actions ?? []).map(a => a.at + (a.duration ?? 0)),
     ...(scene.camera.keys ?? []).map(k => k.at),
-    ...[...(scene.annotations ?? []), ...(scene.links ?? [])].flatMap(o => [
+    ...[...(scene.annotations ?? []), ...(scene.links ?? []), ...(scene.paths ?? [])].flatMap(o => [
       (o.at ?? 0) + (o.reveal ?? 0), o.until ?? 0,
     ]),
   ];

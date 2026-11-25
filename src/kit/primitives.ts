@@ -33,7 +33,7 @@ export function transform(polys: Poly[], x: Xform): Poly[] {
     return x.translate ? add(q, x.translate) : q;
   };
   const nrm = (n: V3): V3 => normalize(x.rotate ? rotateAxis([n[0] / sc[0], n[1] / sc[1], n[2] / sc[2]], x.rotate.axis, x.rotate.angle) : [n[0] / sc[0], n[1] / sc[1], n[2] / sc[2]]);
-  return polys.map((p) => ({...p, pts: p.pts.map(pt), n: nrm(p.n)}));
+  return polys.map((p) => ({...p, pts: p.pts.map(pt), holes: p.holes?.map(hole => hole.map(pt)), n: nrm(p.n)}));
 }
 
 const faceNormal = (pts: V3[]): V3 => normalize(cross(sub(pts[1], pts[0]), sub(pts[2], pts[0])));

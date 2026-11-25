@@ -2,7 +2,7 @@ import type {Pose} from '../../engine/vocab';
 import type {V3, Atmosphere, Light, Material} from '../../kit/space';
 import type {Expression} from '../../themes/cge/face';
 
-export const PROPS = ['box', 'cylinder', 'cone', 'sphere', 'rock', 'car'] as const;
+export const PROPS = ['box', 'cylinder', 'cone', 'sphere', 'rock', 'car', 'aperture', 'outline'] as const;
 export const ENVIRONMENTS = ['ground', 'tree', 'conifer', 'platform', 'mountain'] as const;
 export const ASSETS = [...PROPS, ...ENVIRONMENTS, 'person'] as const;
 export type Asset = (typeof ASSETS)[number];
@@ -23,7 +23,7 @@ export type State = {
   attach: string | null;
   asset: Asset;
 };
-export type Entity = {id: string; size?: V3; material?: Material['kind']; seed?: string} & Pick<State, 'asset'> & Partial<Omit<State, 'asset'>>;
+export type Entity = {id: string; size?: V3; opening?: [number, number, number]; outline?: [number, number][]; material?: Material['kind']; seed?: string} & Pick<State, 'asset'> & Partial<Omit<State, 'asset'>>;
 export type Action = {target: string; at: number; duration?: number; ease?: Easing; set: Partial<State>};
 export type Camera = {position: V3; target: Aim; fov?: number; roll?: number};
 export type CameraKey = Partial<Camera> & {at: number; ease?: Easing};
@@ -31,6 +31,7 @@ export type Style = {color?: string; size?: number; font?: 'serif' | 'sans'; bac
 export type Window = {at?: number; until?: number; reveal?: number};
 export type Annotation = Window & Style & {text: string; subject?: string; atScreen?: [number, number]; offset?: [number, number]};
 export type DiagramLink = Window & {from: string; to: string; color?: string; width?: number; arrow?: boolean};
+export type DiagramPath = Window & {points: V3[]; color?: string; width?: number; arrow?: boolean};
 export type Scene = {
   entities: Entity[];
   actions?: Action[];
@@ -41,4 +42,5 @@ export type Scene = {
   typography?: Style;
   annotations?: Annotation[];
   links?: DiagramLink[];
+  paths?: DiagramPath[];
 };

@@ -64,6 +64,8 @@ export const capabilities = {
         'Attach puts a prop position in person-relative coordinates. Set attach to null and give a world position to release.',
         'Attach changes must provide position and omit duration or set it to zero. They are not hand IK.',
         'Camera keys increase strictly after zero and inherit omitted fields. A named target follows its sampled position plus an optional world-space offset.',
+        'Aperture openings are [width,height,radius] fractions of a unit XY panel. Outline assets extrude a simple XY polygon. Both meshes keep their authored shape.',
+        'Paths project ordered world points and reveal by screen arc length with an optional arrow.',
         'An annotation needs exactly one anchor. Screen anchors are normalized; offsets and text sizes are output pixels.',
         'A link joins two named subjects over the picture. Reveal grows links and fades annotations.',
         'Action, camera and overlay times must fit the measured shot duration including its tail.',
@@ -80,5 +82,5 @@ export const capabilities = {
     voice: 'npm run production:voice -- <episode.json>',
     benchmark: 'npm run production:benchmark -- <episode.json> <new-output-dir> [concurrency]',
   },
-  examples: ['examples/pilot/episode.json', 'examples/river/episode.json', 'examples/composed/episode.json'],
+  examples: ['examples/pilot/episode.json', 'examples/river/episode.json', 'examples/composed/episode.json', 'examples/airplane-windows/episode.json'],
 };

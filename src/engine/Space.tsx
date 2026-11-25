@@ -61,8 +61,11 @@ export const Space: React.FC<SpaceProps> = ({camera, polys, sprites = [], lights
     if (maxX < -50 || minX > width + 50 || maxY < -50 || minY > height + 50) return;
     const z = cam.reduce((s, q) => s + q[2], 0) / cam.length + (p.bias ?? 0);
     const fill = shade(c, facing > 0 ? p.n : ([-p.n[0], -p.n[1], -p.n[2]] as V3), p.m, lights, view.pos, atmosphere, look);
-    const d = `M${scr.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join('L')}Z`;
-    items.push({z, node: <path key={`p${i}`} d={d} fill={fill} stroke={fill} strokeWidth={0.6} strokeLinejoin="round" opacity={p.opacity} />});
+    const path = (points: [number, number][]) => `M${points.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join('L')}Z`;
+    const holes = (p.holes ?? []).map(hole => clipNear(hole.map(q => toCamera(view, q)), view.near))
+      .filter(hole => hole.length >= 3).map(hole => path(hole.map(q => toScreen(view, q))));
+    const d = path(scr) + holes.join('');
+    items.push({z, node: <path key={`p${i}`} d={d} fillRule={p.holes ? 'evenodd' : undefined} fill={fill} stroke={fill} strokeWidth={0.6} strokeLinejoin="round" opacity={p.opacity} />});
   });
 
   sprites.forEach((s, i) => {

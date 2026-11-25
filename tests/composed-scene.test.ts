@@ -68,3 +68,32 @@ test('composed shots reject missing references, conflicts and invalid duration b
   const coincident = {...b, camera: {position: [0, 0, 0], target: [0, 0, 0]}};
   assert.throws(() => planEpisode('test.json', parseEpisode(withScene(coincident))), /coincides with its target/);
 });
+
+test('aperture meshes keep the opening through placement', async () => {
+  const {geometry, placeGeometry} = await import('../src/production/scene/geometry');
+  const scene = readScene({
+    entities: [{id: 'panel', asset: 'aperture', opening: [.5, .75, .24], position: [2, 1, 0], size: [4, 2, 1]}],
+    camera: {position: [0, 1, 4], target: [0, 1, 0]},
+  }, 'scene');
+  const panel = scene.entities[0];
+  const mesh = geometry('aperture', panel);
+  assert.equal(mesh[0].holes?.[0].length, 48);
+  const placed = placeGeometry(mesh, panel, compileScene(scene).sample('panel', 0));
+  const [left, right] = [
+    Math.min(...placed[0].holes![0].map(p => p[0])),
+    Math.max(...placed[0].holes![0].map(p => p[0])),
+  ];
+  assert.ok(Math.abs(left - 1) < .001 && Math.abs(right - 3) < .001);
+  assert.throws(() => readScene({...scene, entities: [{...panel, opening: [.5, .75, .26]}]}, 'scene'), /opening radius/);
+});
+
+test('outline geometry extrudes custom silhouettes and path times stay within the shot', async () => {
+  const {geometry} = await import('../src/production/scene/geometry');
+  const scene = readScene({
+    entities: [{id: 'profile', asset: 'outline', outline: [[0, 0], [1, 0], [0, 1]]}],
+    paths: [{points: [[0, 0, 0], [0, 1, 0], [1, 1, 0]], at: 3, reveal: 2}],
+    camera: {position: [0, 1, 4], target: [0, 1, 0]},
+  }, 'scene');
+  assert.equal(geometry('outline', scene.entities[0]).length, 5);
+  assert.throws(() => planEpisode('test.json', parseEpisode(withScene(scene))), /exceeds the shot duration/);
+});

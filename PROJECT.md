@@ -145,6 +145,43 @@ path reuses the Space renderer, procedural asset kits and the production
 audio, subtitle, assembly and recovery workflow. Prop swaps are cuts.
 Framing and attachment offsets are authored by the director.
 
+### Phase 3 production validation
+
+`examples/airplane-windows/episode.json` is a 15-shot educational episode
+authored as composed scenes. `NARRATION.md` contains the spoken script.
+`PRODUCTION.md` contains fact-check sources, the production evaluation and
+the next engineering priorities.
+
+The pilot needed an opening that exposes the background instead of a
+painted patch. The reusable `aperture` asset has a normalized
+`opening: [width, height, radius]` on a unit XY panel. The mesh keeps its
+hole during scaling, placement and projection. An `outline` asset extrudes an
+authored XY silhouette. Scene `paths` project world-space waypoints and support
+timed reveals and arrowheads. The capability registry describes their JSON.
+These three building blocks work in any composed episode.
+
+From the project root on Linux with the Flite SLT voice installed:
+
+```sh
+npm run production:voice -- examples/airplane-windows/episode.json
+npm run production -- check examples/airplane-windows/episode.json --require-alignment
+npm run production -- contact examples/airplane-windows/episode.json
+npm run production:benchmark -- examples/airplane-windows/episode.json out/production/airplane-validation 2
+```
+
+The shot holds were authored against the Cloud Flite audio. Check that the
+manifest still has 2,700 frames if the speech synthesizer changes. Assembly
+produces the MP4 and aligned SRT. To add the selectable English track to the
+MP4, remux the two files:
+
+```sh
+out=out/production/airplane-validation
+ffmpeg -i "$out/airplane-windows.mp4" -i "$out/airplane-windows.srt" \
+  -map 0:v:0 -map 0:a:0 -map 1:0 -c:v copy -c:a copy -c:s mov_text \
+  -metadata:s:s:0 language=eng -disposition:s:0 default -movflags +faststart \
+  "$out/airplane-windows-captioned.mp4"
+```
+
 ### Cache and recovery
 
 Edit the JSON for one shot and run
@@ -227,7 +264,7 @@ and a four-cell contact sheet matched their requested frames and shot order.
 The feedback pilot also exported 16 aligned cues directly through
 `production -- srt --require-alignment`.
 
-Type checking and all 54 unit tests passed. Both shipped legacy episodes
+Type checking and all 56 unit tests passed. Both shipped legacy episodes
 reported zero QC errors and zero warnings. All 20 Linux visual goldens passed
 without updates, and the determinism PNGs were byte-identical.
 
@@ -499,7 +536,7 @@ props[], actions[], camera: 'wide'|'medium'|'close'|..., onScreenText?, diagram?
 | Command | What it covers |
 | --- | --- |
 | `npm run typecheck` | TypeScript |
-| `npm test` | 54 unit tests: compiler validation and timing, production plans and SRT, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
+| `npm test` | 56 unit tests: compiler validation and timing, production plans and SRT, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
 | `npm run check` | Compiles every script and runs QC: overlap, off-screen/cropped speakers (both formats), fast speech, long Shorts subtitles, short captions, line overlap, sliding walks, pose flicker, repeated gestures, repeated backdrops, pacing metrics |
 | `npm run test:visual` | Renders 20 key frames and compares them with approved goldens (per platform), plus a determinism re-render. `-- --update` approves a new look |
 | `npm run benchmark` | Render speed, real-time factor, projected 10-minute render time, peak memory of the whole render process tree, versatility counts, authoring effort |

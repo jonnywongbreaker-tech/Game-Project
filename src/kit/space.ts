@@ -227,6 +227,7 @@ export function shade(p: V3, n: V3, m: Material, lights: Light[], eye: V3, atmo:
 // ---------------------------------------------------------------- geometry
 export interface Poly {
   pts: V3[];
+  holes?: V3[][];
   /** Outward normal (the side that is drawn). */
   n: V3;
   m: Material;

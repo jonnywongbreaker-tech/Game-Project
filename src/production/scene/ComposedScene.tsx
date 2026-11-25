@@ -89,6 +89,34 @@ export const ComposedScene: React.FC<{scene: Scene}> = ({scene}) => {
               transform={`translate(${x} ${y}) rotate(${angle})`} />}
           </g>;
         })}
+        {(scene.paths ?? []).map((path, i) => {
+          const k = overlayProgress(path, time);
+          if (k <= 0) return null;
+          const projected = path.points.map(point => projectPoint(view, point));
+          if (projected.some(point => !point)) return null;
+          const points = projected.map(point => ({x: point!.x, y: point!.y}));
+          const lengths = points.slice(1).map((point, j) => Math.hypot(point.x - points[j].x, point.y - points[j].y));
+          let remaining = lengths.reduce((a, b) => a + b, 0) * k;
+          const used = [points[0]];
+          for (const [j, length] of lengths.entries()) {
+            const a = points[j], b = points[j + 1];
+            if (!length) continue;
+            const fraction = Math.min(1, remaining / length);
+            used.push({x: mix(a.x, b.x, fraction), y: mix(a.y, b.y, fraction)});
+            remaining -= length;
+            if (remaining <= 0) break;
+          }
+          if (used.length < 2) return null;
+          const end = used.at(-1)!, previous = used.at(-2)!;
+          const color = path.color ?? '#FFE5AE', width = path.width ?? 5;
+          const angle = Math.atan2(end.y - previous.y, end.x - previous.x) * 180 / Math.PI;
+          return <g key={i}>
+            <polyline points={used.map(point => `${point.x},${point.y}`).join(' ')} fill="none" stroke={color}
+              strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" />
+            {path.arrow && <path d={`M 0 0 L ${-4 * width} ${-2 * width} L ${-4 * width} ${2 * width} Z`}
+              fill={color} transform={`translate(${end.x} ${end.y}) rotate(${angle})`} />}
+          </g>;
+        })}
         {(scene.annotations ?? []).map((label, i) => {
           const opacity = overlayProgress(label, time);
           if (!opacity) return null;
