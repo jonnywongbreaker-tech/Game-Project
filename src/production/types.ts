@@ -1,14 +1,17 @@
+import type {Scene} from './scene/types';
+
 export const FPS = 30;
 export const WIDTH = 1920;
 export const HEIGHT = 1080;
 export const SAMPLE_RATE = 48_000;
-export const TEMPLATES = ['card', 'flow', 'urban', 'machine', 'nature', 'abstract'] as const;
+export const TEMPLATES = ['card', 'flow', 'urban', 'machine', 'nature', 'abstract', 'scene'] as const;
 export type Template = (typeof TEMPLATES)[number];
 
 export type ShotVisual = {
   template: Template;
   headline?: string;
   labels?: string[];
+  scene?: Scene;
 };
 
 export interface ShotInput extends ShotVisual {

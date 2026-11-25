@@ -89,6 +89,62 @@ with integer `startFrame` and exclusive `endFrame` values at 30 fps. Use
 `npm run --silent production -- check <episode.json>` for agent-readable JSON.
 Shot preview and render need media for the selected shot only.
 
+### Compose scenes from named subjects
+
+Use `template: "scene"` when the director needs control within a shot. The
+existing templates are also available. A composed shot lists `scene.entities`
+and a `scene.camera`. Run the registry to get the full schema, asset names,
+channel ranges, easing names, pose vocabularies and light forms.
+
+```sh
+npm run --silent production -- capabilities
+npm run production -- check examples/composed/episode.json
+npm run production -- contact examples/composed/episode.json
+npm run production -- assemble examples/composed/episode.json
+```
+
+The JSON-only example *Motion, Transfer, Transformation* contains three
+different shots: a character carries a sample onto a stand in a landscape, a
+causal process reveals and connects named diagram nodes, and a lit tabletop
+changes a prop's material appearance, size and form under a moving camera.
+The exporter writes `out/production/composed-motion/composed-motion.mp4`.
+For a different edit, change the appropriate JSON shot and reuse the same
+output directory. The whole scene description is part of that shot's picture
+cache key.
+
+- **Subjects.** Combine environmental pieces, seeded people and geometric
+  props. Position is a base anchor in right-handed metres with Y up. Rotation
+  is yaw in degrees. `scale` is uniform and animatable. `size` multiplies the
+  base mesh per axis. Person sizing uses uniform scale and its own material.
+  Control paint, opacity, visibility and highlight per subject.
+- **Actions.** An action such as
+  `{"target":"sample","at":0.3,"duration":1.2,"ease":"inOut","set":{"position":[1,0,0]}}`
+  starts in shot-local seconds and controls only its named channels. Position,
+  scale, rotation, colour, opacity and highlight interpolate. Pose, expression,
+  visibility and asset changes step at the action start. Each channel holds its
+  last value. Separate channels can animate together. Overlaps on one channel
+  are rejected. Swapping a prop asset preserves its subject ID.
+- **Interaction.** A prop attached to a named person uses the person's rotated
+  local coordinates. Set `attach` and `position` in an instantaneous action
+  to pick up or release a prop. Use `attach: null` with a world position to
+  release. The attachment follows the person’s scene transform.
+- **Camera.** Set `position`, `target`, optional `fov` and `roll`, then add
+  increasing `camera.keys` in seconds. Keys inherit omitted fields. A target
+  can be a fixed point or `{"subject":"sample","offset":[0,0.4,0]}`.
+  Both camera endpoints resolve their named targets at the sampled time.
+  `check` verifies a usable camera-target separation at every output frame.
+- **Art direction and education.** Choose a background, fog and Space lights.
+  Use shared or local font, size, foreground and background for annotations.
+  Anchor text to screen coordinates or to a subject with a leader line.
+  Add timed, progressively revealed links with optional arrowheads between
+  subjects to build diagrams. These annotations are screen overlays.
+
+The track sampler is stateless. Previewing a frame, revisiting it, and
+sampling it inside a complete export use the same time and inputs. The shot
+path reuses the Space renderer, procedural asset kits and the production
+audio, subtitle, assembly and recovery workflow. Prop swaps are cuts.
+Framing and attachment offsets are authored by the director.
+
 ### Cache and recovery
 
 Edit the JSON for one shot and run
@@ -148,6 +204,12 @@ Mac mini performance has yet to be measured.
 
 ### Verification
 
+The composed demo exported 378 frames (12.6 seconds) at 1080p and 30 fps.
+The complete MP4 decoded successfully. Two independent frame-100 previews
+matched byte-for-byte. Three cached pictures were reused on warm assembly.
+Changing a nested rotation action rendered only the diagram shot. The
+unaffected pictures retained their SHA-256 hashes.
+
 On Linux, the standalone *Why Rivers Bend* episode exported 870 frames
 (29.0 seconds) at 1080p and 30 fps with AAC narration and aligned SRT. FFmpeg
 decoded it end to end. Its four-shot benchmark at concurrency 2 measured
@@ -165,7 +227,7 @@ and a four-cell contact sheet matched their requested frames and shot order.
 The feedback pilot also exported 16 aligned cues directly through
 `production -- srt --require-alignment`.
 
-Type checking and all 50 unit tests passed. Both shipped legacy episodes
+Type checking and all 54 unit tests passed. Both shipped legacy episodes
 reported zero QC errors and zero warnings. All 20 Linux visual goldens passed
 without updates, and the determinism PNGs were byte-identical.
 
@@ -214,7 +276,7 @@ ffmpeg -v error -i out/production/feedback-pilot/feedback-pilot.mp4 -f null -
 
 | Area | State |
 | --- | --- |
-| Script → video (JSON) | Production CLI: standalone narrated shot JSON, 1080p, shot previews and contact sheets, cache recovery, aligned SRT, MP4. Legacy ToonScript still supports dialogue, 16:9, 9:16 and thumbnails. |
+| Script → video (JSON) | Production CLI: standalone narrated shot JSON, 1080p, shot previews and contact sheets, cache recovery, aligned SRT, MP4, and JSON-composed 3D scenes. Legacy ToonScript still supports dialogue, 16:9, 9:16 and thumbnails. |
 | Visual direction | **Approved: Cinematic Geometric Editorial.** Final visual standard NOT locked yet. Versatility benchmark + Person v2 awaiting review (section 3.2) |
 | Rig | Puppet rig v2: full skeleton, IK arms and legs, planted feet, look-at, lean/anticipation, secondary motion |
 | Props | Parenting to world / one hand / two-hand carry with smooth hand-offs |
@@ -437,7 +499,7 @@ props[], actions[], camera: 'wide'|'medium'|'close'|..., onScreenText?, diagram?
 | Command | What it covers |
 | --- | --- |
 | `npm run typecheck` | TypeScript |
-| `npm test` | 50 unit tests: compiler validation and timing, production plans and SRT, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
+| `npm test` | 54 unit tests: compiler validation and timing, production plans and SRT, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
 | `npm run check` | Compiles every script and runs QC: overlap, off-screen/cropped speakers (both formats), fast speech, long Shorts subtitles, short captions, line overlap, sliding walks, pose flicker, repeated gestures, repeated backdrops, pacing metrics |
 | `npm run test:visual` | Renders 20 key frames and compares them with approved goldens (per platform), plus a determinism re-render. `-- --update` approves a new look |
 | `npm run benchmark` | Render speed, real-time factor, projected 10-minute render time, peak memory of the whole render process tree, versatility counts, authoring effort |

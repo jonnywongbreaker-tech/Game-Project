@@ -1,0 +1,92 @@
+{
+  "id": "composed-motion",
+  "title": "Motion, Transfer, Transformation",
+  "shots": [
+    {
+      "id": "field-transfer", "template": "scene", "duration": 4.2,
+      "scene": {
+        "background": "#809FAA",
+        "atmosphere": {"low": "#B8C9AB", "high": "#A5C5E5", "height": 10, "density": 0.014},
+        "typography": {"font": "sans", "color": "#FFF1D8", "background": "#1B3034", "size": 41},
+        "entities": [
+          {"id": "field", "asset": "ground", "color": "#809568"},
+          {"id": "pine", "asset": "conifer", "position": [-4, 0, -2], "scale": 1.4, "color": "#3A6650"},
+          {"id": "tree", "asset": "tree", "position": [3, 0, -3], "scale": 1.25, "color": "#678D57"},
+          {"id": "hill", "asset": "mountain", "position": [-4, 0, -10], "scale": 1.5, "color": "#829A9F"},
+          {"id": "guide", "asset": "person", "position": [-2.6, 0, 0], "rotation": 90, "color": "#B94D36", "pose": "present"},
+          {"id": "sample", "asset": "sphere", "attach": "guide", "position": [0.23, 1.03, 0.38], "scale": 0.28, "color": "#F5C45A", "highlight": 0.8},
+          {"id": "stand", "asset": "cylinder", "position": [0.6, 0, -0.23], "size": [0.8, 0.64, 0.8], "color": "#7C9AA9"}
+        ],
+        "actions": [
+          {"target": "guide", "at": 0.3, "duration": 1.8, "ease": "inOut", "set": {"position": [-0.35, 0, 0]}},
+          {"target": "guide", "at": 2.1, "set": {"pose": "point", "expression": "content"}},
+          {"target": "sample", "at": 2.2, "set": {"attach": null, "position": [0.03, 1.03, -0.23]}},
+          {"target": "sample", "at": 2.2, "duration": 0.55, "ease": "out", "set": {"scale": 0.4, "highlight": 1}},
+          {"target": "sample", "at": 2.3, "duration": 0.55, "ease": "inOut", "set": {"position": [0.6, 0.64, -0.23]}}
+        ],
+        "camera": {"position": [3, 2.7, 6.5], "target": {"subject": "guide", "offset": [0.8, 0.85, 0]}, "fov": 40,
+          "keys": [{"at": 3.65, "position": [2.15, 2.65, 5.35], "target": {"subject": "sample", "offset": [0, 0.22, 0]}, "fov": 35, "ease": "inOut"}]},
+        "annotations": [
+          {"text": "Move a sample onto the stand", "atScreen": [0.5, 0.12], "font": "serif", "size": 56, "reveal": 0.35},
+          {"text": "Sample on the stand", "subject": "sample", "offset": [215, -120], "at": 2.9, "reveal": 0.4}
+        ]
+      }
+    },
+    {
+      "id": "causal-diagram", "template": "scene", "duration": 4.2,
+      "scene": {
+        "background": "#172434",
+        "typography": {"font": "sans", "color": "#FFF1D8", "background": "#172434", "size": 41},
+        "entities": [
+          {"id": "input", "asset": "sphere", "position": [-3.2, 0, 0], "color": "#EFAD63", "scale": 1.15},
+          {"id": "process", "asset": "box", "position": [0, 0, 0], "color": "#67B5B0", "opacity": 0},
+          {"id": "output", "asset": "cone", "position": [3.2, 0, 0], "color": "#A8A5E6", "opacity": 0}
+        ],
+        "actions": [
+          {"target": "input", "at": 0.25, "duration": 0.65, "set": {"highlight": 1}},
+          {"target": "process", "at": 0.85, "duration": 0.65, "ease": "out", "set": {"opacity": 1, "rotation": 40}},
+          {"target": "output", "at": 1.85, "duration": 0.65, "ease": "out", "set": {"opacity": 1, "scale": 1.2}}
+        ],
+        "camera": {"position": [0, 4.5, 11], "target": [0, 0.7, 0], "fov": 42},
+        "links": [
+          {"from": "input", "to": "process", "color": "#FFE5AE", "arrow": true, "at": 0.9, "reveal": 0.75},
+          {"from": "process", "to": "output", "color": "#FFE5AE", "arrow": true, "at": 1.95, "reveal": 0.75}
+        ],
+        "annotations": [
+          {"text": "A three-stage process", "atScreen": [0.5, 0.16], "font": "serif", "size": 64},
+          {"text": "Input", "subject": "input", "offset": [0, 155]},
+          {"text": "Process", "subject": "process", "offset": [0, 155], "at": 1.2, "reveal": 0.3},
+          {"text": "Output", "subject": "output", "offset": [0, 155], "at": 2.2, "reveal": 0.3}
+        ]
+      }
+    },
+    {
+      "id": "material-study", "template": "scene", "duration": 4.2,
+      "scene": {
+        "background": "#342944",
+        "typography": {"color": "#FFF0DC", "background": "#342944", "size": 46, "font": "serif"},
+        "lights": [
+          {"kind": "hemisphere", "sky": "#C3C5FC", "ground": "#894A59", "intensity": 0.62},
+          {"kind": "point", "pos": [2, 3, 3], "color": "#FFD1A3", "range": 8, "intensity": 1.4}
+        ],
+        "entities": [
+          {"id": "table", "asset": "platform", "size": [0.62, 1, 0.58], "color": "#77658C"},
+          {"id": "form", "asset": "box", "position": [0, 0.3, 0], "scale": 1.2, "color": "#DD7C68", "material": "metal"},
+          {"id": "reference", "asset": "sphere", "position": [-1.36, 0.3, 0], "scale": 0.48, "color": "#CAAAC2"}
+        ],
+        "actions": [
+          {"target": "form", "at": 0.15, "duration": 1.35, "ease": "inOut", "set": {"rotation": 115, "scale": 0.6, "color": "#F2BB7F"}},
+          {"target": "reference", "at": 1.65, "set": {"visible": false}},
+          {"target": "form", "at": 1.65, "set": {"asset": "cone"}},
+          {"target": "form", "at": 1.65, "duration": 1.7, "ease": "out", "set": {"rotation": 300, "scale": 1.65, "color": "#79BDBA", "highlight": 0.5}}
+        ],
+        "camera": {"position": [4.2, 3.05, 5.6], "target": {"subject": "form", "offset": [0, 0.7, 0]},
+          "fov": 39, "keys": [{"at": 3.7, "position": [-3.4, 2.9, 5.5], "fov": 32, "ease": "inOut"}]},
+        "annotations": [
+          {"text": "Change scale, colour and form", "atScreen": [0.5, 0.13], "size": 58},
+          {"text": "Preserve the same subject", "atScreen": [0.5, 0.88], "at": 1.78, "reveal": 0.35}
+        ]
+      }
+    }
+  ]
+}

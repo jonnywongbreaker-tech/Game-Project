@@ -1,0 +1,44 @@
+import type {Pose} from '../../engine/vocab';
+import type {V3, Atmosphere, Light, Material} from '../../kit/space';
+import type {Expression} from '../../themes/cge/face';
+
+export const PROPS = ['box', 'cylinder', 'cone', 'sphere', 'rock', 'car'] as const;
+export const ENVIRONMENTS = ['ground', 'tree', 'conifer', 'platform', 'mountain'] as const;
+export const ASSETS = [...PROPS, ...ENVIRONMENTS, 'person'] as const;
+export type Asset = (typeof ASSETS)[number];
+export const TIME_EPSILON = 1e-8;
+export const EASINGS = ['linear', 'in', 'out', 'inOut'] as const;
+export type Easing = (typeof EASINGS)[number];
+export type Aim = V3 | {subject: string; offset?: V3};
+export type State = {
+  position: V3;
+  scale: number;
+  rotation: number;
+  color: string;
+  opacity: number;
+  visible: boolean;
+  highlight: number;
+  pose: Pose;
+  expression: Expression;
+  attach: string | null;
+  asset: Asset;
+};
+export type Entity = {id: string; size?: V3; material?: Material['kind']; seed?: string} & Pick<State, 'asset'> & Partial<Omit<State, 'asset'>>;
+export type Action = {target: string; at: number; duration?: number; ease?: Easing; set: Partial<State>};
+export type Camera = {position: V3; target: Aim; fov?: number; roll?: number};
+export type CameraKey = Partial<Camera> & {at: number; ease?: Easing};
+export type Style = {color?: string; size?: number; font?: 'serif' | 'sans'; background?: string};
+export type Window = {at?: number; until?: number; reveal?: number};
+export type Annotation = Window & Style & {text: string; subject?: string; atScreen?: [number, number]; offset?: [number, number]};
+export type DiagramLink = Window & {from: string; to: string; color?: string; width?: number; arrow?: boolean};
+export type Scene = {
+  entities: Entity[];
+  actions?: Action[];
+  camera: Camera & {keys?: CameraKey[]};
+  lights?: Light[];
+  atmosphere?: Atmosphere;
+  background?: string;
+  typography?: Style;
+  annotations?: Annotation[];
+  links?: DiagramLink[];
+};

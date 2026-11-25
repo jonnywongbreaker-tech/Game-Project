@@ -7,12 +7,14 @@ import {Machine} from '../prototypes/versatility/Machine';
 import {Nature} from '../prototypes/versatility/Nature';
 import {Urban} from '../prototypes/versatility/Urban';
 import {ACCENT, INK} from '../themes/cge/type';
+import {ComposedScene} from './scene/ComposedScene';
 import {FPS, HEIGHT, WIDTH, type RenderProps} from './types';
 
 const scenes = {urban: Urban, machine: Machine, nature: Nature, abstract: Abstract};
 
-const ProductionShot: React.FC<RenderProps> = ({template, headline, labels, frames}) => {
+const ProductionShot: React.FC<RenderProps> = ({template, headline, labels, frames, scene}) => {
   const frame = useCurrentFrame();
+  if (template === 'scene') return <ComposedScene scene={scene!} />;
   if (template === 'card' || template === 'flow') {
     return (
       <AbsoluteFill style={{background: '#141E2B', color: INK, justifyContent: 'center', padding: 112}}>

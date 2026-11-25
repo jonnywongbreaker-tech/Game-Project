@@ -4,6 +4,8 @@ import {dirname, isAbsolute, resolve} from 'node:path';
 import {FPS, TEMPLATES, type EpisodeInput, type RenderProps, type ShotInput, type Template} from '../../src/production/types';
 import {wordTimings} from '../../src/engine/speech';
 import {loadAlignment, type Alignment} from './production-alignment';
+import {readScene, validateSceneDuration} from '../../src/production/scene/schema';
+import {compileScene} from '../../src/production/scene/timeline';
 import {record} from '../../src/script/validate';
 
 type PlannedShot = {
@@ -54,7 +56,7 @@ function seconds(value: unknown, where: string, min: number, max: number): numbe
 
 function parseShot(value: unknown, index: number): ShotInput {
   const where = `shots[${index}]`;
-  const input = object(value, where, ['id', 'template', 'headline', 'labels', 'voice', 'duration', 'tail']);
+  const input = object(value, where, ['id', 'template', 'headline', 'labels', 'voice', 'duration', 'tail', 'scene']);
   const shotId = id(input.id, `${where}.id`);
   const field = `shot "${shotId}"`;
   const template = line(input.template, `${field}.template`, 20) as Template;
@@ -71,7 +73,10 @@ function parseShot(value: unknown, index: number): ShotInput {
     throw new Error(`${field}.labels: only supported by flow.`);
   }
 
-  const visual = {id: shotId, template, headline, labels};
+  if (template !== 'scene' && input.scene !== undefined) throw new Error(`${field}.scene: only supported by the scene template.`);
+  if (template === 'scene' && headline !== undefined) throw new Error(`${field}.headline: use scene.annotations for composed shots.`);
+  const scene = template === 'scene' ? readScene(input.scene, `${field}.scene`) : undefined;
+  const visual = {id: shotId, template, headline, labels, scene};
   if (input.voice === undefined) {
     if (input.tail !== undefined) throw new Error(`${field}.tail: requires voice.`);
     return {...visual, duration: seconds(input.duration, `${field}.duration`, 1 / FPS, 120)};
@@ -135,10 +140,19 @@ export function planEpisode(file: string, episode = readEpisode(file), probe = p
     }
     const duration = voice ? voice.seconds + (shot.tail ?? 0) : shot.duration!;
     const frames = Math.ceil(duration * FPS - 1e-9);
+    if (shot.scene) {
+      validateSceneDuration(shot.scene, duration, `Shot "${shot.id}"`);
+      const sampler = compileScene(shot.scene);
+      try {
+        for (let frame = 0; frame < frames; frame++) sampler.camera(frame / FPS);
+      } catch (error) {
+        throw new Error(`Shot "${shot.id}": ${(error as Error).message}`);
+      }
+    }
     const startFrame = cursor;
     cursor += frames;
     return {id: shot.id, startFrame, endFrame: cursor, voice,
-      visual: {template: shot.template, headline: shot.headline, labels: shot.labels, frames}};
+      visual: {template: shot.template, headline: shot.headline, labels: shot.labels, scene: shot.scene, frames}};
   });
   return {id: episode.id, title: episode.title, fps: FPS, totalFrames: cursor, shots};
 }

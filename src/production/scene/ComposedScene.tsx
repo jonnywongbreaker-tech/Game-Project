@@ -1,0 +1,118 @@
+import React, {useMemo} from 'react';
+import {AbsoluteFill, useCurrentFrame, useVideoConfig} from 'remotion';
+import {Space, type Sprite} from '../../engine/Space';
+import {FONT, SERIF} from '../../engine/fonts';
+import {add, makeView, projectPoint, type Light, type Poly, type V3} from '../../kit/space';
+import {LOOK} from '../../themes/cge/identity';
+import {randomPerson} from '../../themes/cge/Person';
+import {personSprite} from '../../themes/cge/personSprite';
+import type {Asset, Scene} from './types';
+import {geometry, placeGeometry} from './geometry';
+import {compileScene, mix, overlayProgress} from './timeline';
+
+const defaultLights: Light[] = [
+  {kind: 'hemisphere', sky: '#CEDDEB', ground: '#7C839E', intensity: .75},
+  {kind: 'directional', dir: [0.5, -.8, .3], color: '#FFE9CF', intensity: .82},
+];
+
+export const ComposedScene: React.FC<{scene: Scene}> = ({scene}) => {
+  const frame = useCurrentFrame();
+  const {fps, width, height} = useVideoConfig();
+  const time = frame / fps;
+  const sampler = useMemo(() => compileScene(scene), [scene]);
+  const library = useMemo(() => new Map(scene.entities.map(entity => {
+    const assets = new Set<Asset>([entity.asset]);
+    for (const action of scene.actions ?? []) if (action.target === entity.id && action.set.asset) assets.add(action.set.asset);
+    const meshes = new Map<Asset, {polys: Poly[]; height: number}>();
+    for (const asset of assets) {
+      if (asset === 'person') continue;
+      const polys = geometry(asset, entity);
+      const top = Math.max(0, ...polys.flatMap(polygon => polygon.pts.map(point => point[1])));
+      meshes.set(asset, {polys, height: top * (entity.size?.[1] ?? 1)});
+    }
+    return [entity.id, meshes];
+  })), [scene]);
+  const states = new Map(scene.entities.map(entity => [entity.id, sampler.sample(entity.id, time)]));
+  const polys: Poly[] = [];
+  const sprites: Sprite[] = [];
+  const lights = scene.lights ?? defaultLights;
+  const camera = sampler.camera(time);
+  const visible = (s: {visible: boolean; opacity: number}) => s.visible && s.opacity > 0;
+  for (const entity of scene.entities) {
+    const state = states.get(entity.id)!;
+    if (!visible(state)) continue;
+    if (state.asset === 'person') {
+      const radians = state.rotation * Math.PI / 180;
+      const character = personSprite({
+        spec: {...randomPerson(entity.seed ?? entity.id), top: state.color},
+        pos: state.position, heading: [Math.sin(radians), 0, Math.cos(radians)], t: time,
+        pose: state.pose, expression: state.expression, walked: state.walked, walking: state.walking,
+      }, lights);
+      sprites.push({...character, render: projection => (
+        <g opacity={state.opacity}>
+          {state.highlight > 0 && <circle cx={projection.x} cy={projection.y - projection.scale * state.scale * .8}
+            r={projection.scale * state.scale * .96} fill="#FFC15E" opacity={state.highlight * .38} />}
+          {character.render({...projection, scale: projection.scale * state.scale})}
+        </g>
+      )});
+    } else {
+      polys.push(...placeGeometry(library.get(entity.id)!.get(state.asset)!.polys, entity, state));
+    }
+  }
+
+  const view = makeView(camera, width, height);
+  const project = (id: string) => {
+    const state = states.get(id)!;
+    if (!visible(state)) return null;
+    const anchorHeight = state.asset === 'person' ? 1.65 : (library.get(id)!.get(state.asset)!.height * .55);
+    const anchor: V3 = [0, state.scale * anchorHeight, 0];
+    return projectPoint(view, add(state.position, anchor));
+  };
+  const background = scene.background ?? '#26364A';
+
+  return (
+    <AbsoluteFill>
+      <Space camera={camera} polys={polys} sprites={sprites} lights={lights} look={LOOK}
+        background={<AbsoluteFill style={{background}} />}
+        atmosphere={scene.atmosphere ?? {low: background, high: background, height: 12, density: 0}} />
+      <svg width={width} height={height} style={{position: 'absolute', inset: 0}}>
+        {(scene.links ?? []).map((link, i) => {
+          const k = overlayProgress(link, time);
+          const a = project(link.from), b = project(link.to);
+          if (k <= 0 || !a || !b) return null;
+          const x = mix(a.x, b.x, k), y = mix(a.y, b.y, k);
+          const angle = Math.atan2(y - a.y, x - a.x) * 180 / Math.PI;
+          const color = link.color ?? '#FFE5AE';
+          return <g key={i} opacity={Math.min(1, k * 4)}>
+            <path d={`M ${a.x} ${a.y} L ${x} ${y}`} stroke={color} strokeWidth={link.width ?? 5} />
+            {link.arrow && <path d="M 0 0 L -20 -11 L -20 11 Z" fill={color}
+              transform={`translate(${x} ${y}) rotate(${angle})`} />}
+          </g>;
+        })}
+        {(scene.annotations ?? []).map((label, i) => {
+          const opacity = overlayProgress(label, time);
+          if (!opacity) return null;
+          const point = label.subject ? project(label.subject) : null;
+          if (label.subject && !point) return null;
+          const style = {...scene.typography, ...label};
+          const anchor = label.atScreen;
+          const [dx, dy] = label.offset ?? (anchor ? [0, 0] : [100, -100]);
+          const x = (point?.x ?? anchor![0] * width) + dx;
+          const y = (point?.y ?? anchor![1] * height) + dy;
+          const color = style.color ?? '#F3E9D8';
+          const size = style.size ?? 38;
+          return <g key={i} opacity={opacity}>
+            {point && <path d={`M ${point.x} ${point.y} L ${x} ${y}`} stroke={color} strokeWidth={3} />}
+            <foreignObject x={x - 360} y={y - size} width={720} height={size * 3}>
+              <div style={{display: 'flex', justifyContent: 'center', textAlign: 'center'}}>
+                <span style={{color, padding: '2px 13px', lineHeight: 1.12, fontWeight: 700,
+                  fontSize: size, fontFamily: style.font === 'serif' ? SERIF : FONT,
+                  background: style.background ?? '#172434'}}>{label.text}</span>
+              </div>
+            </foreignObject>
+          </g>;
+        })}
+      </svg>
+    </AbsoluteFill>
+  );
+};
