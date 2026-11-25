@@ -356,17 +356,43 @@ ffmpeg -v error -i out/production/feedback-pilot/feedback-pilot.mp4 -f null -
 | Area | State |
 | --- | --- |
 | Script → video (JSON) | Production CLI: standalone narrated shot JSON, 1080p, shot previews and contact sheets, cache recovery, aligned SRT, MP4, and JSON-composed 3D scenes. Legacy ToonScript still supports dialogue, 16:9, 9:16 and thumbnails. |
-| Visual direction | **Approved: Cinematic Geometric Editorial.** Final visual standard NOT locked yet. Versatility benchmark + Person v2 awaiting review (section 3.2) |
+| Visual direction | **Cinematic Geometric v3 provisionally approved** as the working direction (Phase 4.1). No permanent identity lock. Machine-style cutaways approved as a priority technique. Current footage NOT approved for publication |
 | Rig | Puppet rig v2: full skeleton, IK arms and legs, planted feet, look-at, lean/anticipation, secondary motion |
 | Props | Parenting to world / one hand / two-hand carry with smooth hand-offs |
 | Environments | **Space kit**: real 3D perspective with flat-shaded geometry, procedural architecture (atrium generator), lighting model, height fog. Plus the 2D parallax kit from v2 |
 | Concept visuals | Network kit in 2D and 3D (grow, recall wave, persistent glow, fade, dissolve), particle bursts. Labeled flow diagram exposed in the production CLI. Broader chart library pending |
 | Cinematography | Shot sequencer + **semantic shot grammar** (establishing, closeUp, objectReveal, tracking, cutaway, scaleTransition); see `docs/SHOT_GRAMMAR.md` |
 | Look system | Shared identity (`src/themes/cge/identity.ts`): banded light, cool-shadow and warm-light tints, matte/metal/glass/water materials, low coloured haze, planar cast shadows |
-| Characters | **Person v2** (`src/themes/cge/Person.tsx`): faceted design system, proper hands, procedural cast variation; the Archivist is one preset. **Front, profile and back views** chosen automatically from the camera angle; **10 data-driven expressions** (`face.ts`). NOT locked |
+| Characters | **Person v2** (`src/themes/cge/Person.tsx`): faceted design system, proper hands, procedural cast variation; the Archivist is one preset. **Front, profile and back views** chosen automatically from the camera angle; **10 data-driven expressions** (`face.ts`). **Provisionally approved for wide and medium shots**; close-ups not approved. NOT locked |
 | Renderer | SVG Space renderer kept; Three.js evaluated with a measured spike; hybrid recommended (`docs/RENDERER_ASSESSMENT.md`) |
 | QC | Static QC (composition, readability, sync, movement, repetition, pacing), unit tests, visual regression, determinism, benchmarks |
-| Automation | Claude Code or Codex drives production through standalone JSON and the CLI. Embedded director deferred. |
+| Automation | Claude Code or Codex drives production through standalone JSON and the CLI. Embedded director deferred. **Gap:** the strongest footage (v3, versatility) is code-authored; JSON parity is the Phase 4.1 priority (section 4.1) |
+
+### Phase 4.1 directive (2026-11-25)
+
+Codex completed an independent visual and technical audit. Owner decisions:
+
+- Cinematic Geometric v3: provisionally approved as the working visual direction.
+- Person v2: provisionally approved for wide and medium shots.
+- Machine-style cutaways: approved as a priority educational storytelling technique.
+- Current footage: not approved for publication. No permanent visual identity lock.
+
+**Primary architectural concern (Codex):** the strongest demonstrations are code-authored
+prototypes and do not establish equivalent capabilities in the JSON production pipeline.
+The objective is an autonomous engine, not a collection of individually programmed
+videos, so closing this gap is the highest priority. Codex also reported an occlusion
+defect in the Urban tram shot (section 9).
+
+Tasks, in order: (1) capability parity audit (done: section 4.1), (2) rendering
+correctness (tram occlusion, reusable depth ordering, regression tests), (3) animation
+and choreography (continuous turns and three-quarter views, weight transfer, prop
+attach/release, grip positioning, continuity across cuts, foreground obstruction
+detection), (4) visual polish within the existing style (contact shadows, local light,
+material variation, environment detail, title contrast, mobile-readable callouts, less
+repetition) at reasonable cost on the Mac mini, (5) narration and audio audit (done:
+section 4.1), (6) a 60–90 s narrated editorial test built through JSON alone with no
+episode-specific code, measured authoring and render time, and multi-frame QC.
+Major architectural changes wait for owner review of the plan in section 10.
 
 ## 3. Visual direction: the three prototypes
 
@@ -423,7 +449,7 @@ decision gates the asset-library work (roadmap phase 1).
 4. **Asset breadth.** 3–5 environment sets, 30–50 props, 3–4 characters with outfits, and diagram types (bar, line, flow, timeline, labelled cutaway).
 5. **Art direction rules in QC.** Contrast/readability of text over backgrounds, silhouette clarity (character vs background value), and a minimum light/dark separation per theme.
 
-## 3.1 Benchmark v3: Cinematic Geometric Editorial (awaiting approval)
+## 3.1 Benchmark v3: Cinematic Geometric Editorial (provisionally approved, Phase 4.1)
 
 Composition `Memory-v3-CinematicGeometric` (18 s, four shots), built with the new
 **Space** pipeline. Files: content in `src/prototypes/memory3/scene.ts`; renderer in
@@ -471,7 +497,7 @@ Composition `Memory-v3-CinematicGeometric` (18 s, four shots), built with the ne
 5. **Geometry detail budget:** levels of detail (books merge into blocks with distance) to allow richer sets without slower renders.
 6. **More architecture generators** (stairs, bridges, arches, domes, outdoor terrain) for other metaphors.
 
-## 3.2 Versatility benchmark + Person v2 (awaiting review)
+## 3.2 Versatility benchmark + Person v2 (Person v2 provisionally approved for wide and medium shots)
 
 Four 5-second scenes plus two character design sheets, all in one identity and built only from reusable kits. Compositions: `V-Urban`, `V-Machine`, `V-Nature`, `V-Abstract`, `Character-Sheet`, `Character-Turnaround`.
 
@@ -497,7 +523,7 @@ Four 5-second scenes plus two character design sheets, all in one identity and b
 - **Variation:** height, build, skin, hair and palette, plus a bag.
 - **Presets and crowds:** `randomPerson(seed)` produces a consistent, varied cast; the Archivist is a preset.
 
-**Views and expressions (round 2, awaiting review; `Character-Turnaround`):**
+**Views and expressions (round 2, provisionally approved for wide and medium shots; `Character-Turnaround`):**
 - **Front and back views** alongside the profile. The rig takes a `view` (`src/kit/puppet.ts`): seen from the front, forward reaches land just inside the shoulders, feet stand side by side and a stride shows as lift, and a forward lean no longer rolls the torso.
 - **Automatic view choice:** `chooseView()` shows the front or back when the character faces within about 40° of the camera axis, otherwise the profile. `personSprite` applies it per frame, so the urban crowd walking along the street now shows faces and backs. A `view` on the placement overrides it.
 - **Expression set as data** (`src/themes/cge/face.ts`): neutral, smile, laugh, content, wonder, concern, sad, angry, thinking, determined. Each is brow (lift, inner angle), eye (opening, cheek squint, gaze) and mouth (width, curve, opening, skew). The same data drives the profile and front faces.
@@ -526,6 +552,55 @@ Four 5-second scenes plus two character design sheets, all in one identity and b
 | Frame-accurate audio sync, phoneme lip sync | **Partial** | Per-line audio drives timing; word timing is estimated; mouth is generic flaps. **Needs**: forced alignment (word + phoneme times) → visemes: *medium* |
 | Optional subtitle styles | **Partial** | Per theme + on/off per format. **Needs**: style selection in the script: *small* |
 | Deterministic, reproducible rendering | **Done** | Seeded randomness only, pure functions of time, deterministic compile (tested), pixel-identical re-renders (tested), pinned dependencies, bundled fonts, baked textures |
+
+## 4.1 JSON capability parity (Phase 4.1 audit, 2026-11-25)
+
+Section 4 lists what the engine can do in code. This audit asks what an AI director can
+do **through production JSON alone**, compared with the code-authored v3
+(`src/prototypes/memory3`) and versatility (`src/prototypes/versatility`) demonstrations.
+
+**Headline finding.** The production templates `urban`, `machine`, `nature` and
+`abstract` (`src/production/index.tsx`) replay the fixed five-second prototype
+compositions, retimed to the shot length with an optional headline. They cannot be
+directed. The only composable path is the `scene` template (`src/production/scene/`):
+up to 64 entities from 8 props (`box`, `cylinder`, `cone`, `sphere`, `rock`, `car`,
+`aperture`, `outline`), 5 environment assets (`ground`, `tree`, `conifer`, `platform`,
+`mountain`) and `person`, plus timed property actions, keyed camera, lights, fog and
+overlays. Every kit behind the strong footage (atrium, city, terrain, mechanics,
+library, network, particles, formation, shot grammar, prop hand-offs, puppet input) is
+reachable only from TypeScript.
+
+Legend: **JSON** available to a director now · **Partial** some of it in JSON ·
+**Code** exists only as a kit or prototype · **Missing** exists nowhere.
+Effort: S ≤ 1 day, M 1–3 days, L about a week of agent work.
+
+| Area | JSON today | Code-only today | Missing reusable primitive | Status | Effort |
+| --- | --- | --- | --- | --- | --- |
+| Hierarchical composition | Episode `library` groups: nested (8 deep), variants, optional dressing, position/yaw/scale (`scripts/lib/production-composition.ts`) | `SceneDef.build(t)` composes kits freely | Groups expand to flat entities at load, so an assembled object cannot move, turn or hide as one unit; parenting only prop→person; 64-entity cap after expansion | Partial | M |
+| Hand and prop choreography | `attach` puts a prop at a fixed offset from the person's origin, stepping instantly ("not hand IK") | `kit/props.ts` world / one-hand / two-hand carry anchors with blended hand-offs; `held` render on hands; hand poses relaxed/hold/open; reach and offer IK in v3 | Attach to a named hand or carry point, grip pose, reach target, blended attach and release; prop-to-prop attach | Code | M |
+| Character animation | 8 poses, 10 expressions, walking derived from position moves, heading from rotation, automatic front/profile/back view | v3 Archivist timeline: blended arm poses, lean, anticipation, look-at, light-aware skin | Continuous turns and three-quarter views (nowhere), expression blends, look-at target, weight transfer in walks, talking flag in `scene` shots | Partial | L |
+| Environment construction | Primitive props and 5 nature assets; ground is a single 24 m quad | Atrium generator, city building/street/lamp/tram/car, terrain heightfield with river, scatter, shelves and books, gears/crank-slider/cutaway housing/half sleeve, formation morph | Parametric generator assets in JSON (`gear`, `cutaway`, `building`, `street`, `terrain`, `atrium`, `scatter`) with seeds and sizes | Code | M per family, L total |
+| Lighting and focal effects | 4 light kinds (max 8), height fog, profile `look` bands, emissive `highlight` | Depth-of-field bands (`Space` `dof`, wired only in `SceneFrame`), volumetric beam, motes and bursts, glowing orbs, vignette, film grain | DOF / focus subject on camera keys; localized light pools; contact shadows; particles as entities | Partial | S (DOF, grain) to M |
+| Camera direction | Raw keys: position, target or followed subject, FOV, roll, easing on straight-line paths | Shot grammar (`kit/shotGrammar.ts`): establishing, closeUp, objectReveal, tracking, cutaway, scaleTransition, with orbit arcs and handheld drift | Named shots in JSON resolved against subjects; arc paths; line-of-sight / foreground-obstruction check | Code | M (highest leverage) |
+| Cross-shot continuity | None: each shot declares its own world; library groups reduce repetition | v3 keeps one world across four shots by construction | Episode-level sets shared by shots; entity state carried across cuts (positions, attachments, motion); match-cut helper | Missing | M |
+| Material styling | Per-entity kind (flat/matte/metal/glass/water), palette tones, colour, style profile | Per-face materials (`FaceMats`), cutaway section colour, seeded colour variation, occlusion | Per-face or per-part materials and seeded variation in JSON; section material for cutaways | Partial | S–M |
+| Object layering and depth | Painter's order only; no JSON control; overlays always on top | Hand-tuned `bias` per kit polygon | Object-level depth groups (section 9, tram defect) and occlusion-aware callouts | Partial (defective) | M |
+| On-screen text | Annotations (subject or screen anchor, reveal), links, paths, template headline | Display title + kicker, chapter marks, scrimmed subtitles, leader-line callouts (Machine) | Title and chapter blocks, callout style, minimum mobile text size and contrast rules in QC | Partial | S |
+| Concept visuals | Links and paths between subjects | 3D memory network with hop-by-hop recall, particle bursts, motes | Network and particle generators as entities | Code | M |
+
+**Existing pieces to reuse, not rebuild:** library groups and variants; `kit/props.ts`
+hand-off blending; `kit/shotGrammar.ts`; `Space` DOF; `chooseView`; `kit/mechanics.ts`;
+production QC sampling and contact sheets; the narration request/import contract.
+
+### Narration and audio (audit of the Phase 4 implementation)
+
+| Piece | State |
+| --- | --- |
+| Provider-independent narration | **Done.** `production narration` exports requests with pronunciation aliases; any provider's WAV is imported with a SHA-bound word-timing sidecar. Paid TTS stays optional. |
+| Local voices | Linux: flite SLT with word timings (`scripts/flite-voice.py`, needs `libflite.so`). macOS: `say` with **no** timings. The Phase 4 demo used Piper (LJ Speech), but no script wraps Piper and it is not installed on the Mac mini. |
+| Alignment | Optional PocketSphinx aligner (`scripts/align-narration.py`), dictionary-based. **Not installed on the Mac mini**, so Mac narration today gets estimated captions. |
+| Mixing | Music bed with sidechain ducking, timed effects with gain and loop, single-pass loudness on the voice only, limiter, mono AAC. |
+| Gaps | (1) a scripted natural local voice on the Mac (Piper or a macOS premium voice) plus a working aligner; (2) **visual cues keyed to narration words** (actions use shot seconds only), needed for picture-narration sync; (3) talking and visemes in `scene` shots; (4) final-mix loudness to a target (e.g. −14 LUFS) and stereo output; (5) pauses beyond shot lead/tail; (6) effects tied to actions. |
 
 ## 5. Target architecture (automation)
 
@@ -614,7 +689,21 @@ Node 26.13.1), Remotion default concurrency:
 | B · Textured | 15 s | 17.9 s | 1.19× | 12 min | 5.8 GB |
 | C · Cinematic | 15 s | 75.3 s | 5.0× | 50 min | 7.5 GB |
 
-The Mac renders 2.7–8× faster than the cloud Xeon. Peak memory is higher (more
+Second Mac mini run (2026-11-25, same machine, `npm run benchmark -- <ids>`), the
+compositions outside the default set:
+
+| Composition | Video | Render | × real time | Projected 10-min video | Peak memory |
+| --- | --- | --- | --- | --- | --- |
+| **v3 · Cinematic Geometric** | 18 s | 49.7 s | 2.76× | 28 min | 8.0 GB |
+| Versatility · Urban | 5 s | 4.5 s | 0.91× | 9 min | 4.6 GB |
+| Versatility · Mechanical | 5 s | 3.9 s | 0.78× | 8 min | 4.0 GB |
+| Versatility · Natural | 5 s | 5.0 s | 1.00× | 10 min | 5.0 GB |
+| Versatility · Abstract | 5 s | 3.9 s | 0.78× | 8 min | 4.3 GB |
+| Character sheet / turnaround | 3 s | 1.2 s | 0.40× | 4 min | 2.9 GB |
+
+Both runs are in `benchmarks/results.json`; `benchmarks/LATEST.md` shows the default set.
+
+The Mac renders 2.7–8× faster than the cloud Xeon (v3: 3.4×). Peak memory is higher (more
 parallel Chromium tabs at default concurrency) but stays under a third of the RAM.
 
 **Linux cloud** — measured 2026-11-24 on a 4-core cloud Xeon, 1920×1080, Remotion default concurrency:
@@ -640,7 +729,8 @@ only on the stage layer) that are deferred until the look is locked.
 
 ## 9. Known limitations
 
-- **Choreography of rich scenes is hand-keyed** (prototype `scene.ts`); the JSON format only exposes walk/pose/expression/emote/camera.
+- **Occlusion errors from per-polygon depth sorting (Urban tram, reported by Codex).** `Space` sorts each polygon by the average camera depth of its vertices and each sprite by one anchor point. The tram is built from single 16 m faces (`kit/city.ts` `tram`), so in the chase shot pedestrians on the far sidewalk, behind the tram but nearer the camera than the face centres, are drawn on top of the tram roof. Any long or large polygon can fail the same way; kits work around it with hand-tuned `bias`. Proposed fix: object-level depth groups (section 10, item A1).
+- **Choreography of rich scenes is hand-keyed** (prototype `scene.ts`); production JSON exposes only the primitives in section 4.1.
 - **Default style (Ep001/Ep002) predates the theme contract** and uses the older rig. Port it once the visual direction is locked.
 - **Lip sync** is generic mouth flapping; word timing is estimated unless real audio is synced per line.
 - **Character views** are front, profile and back with hard switches; no three-quarter front or animated turns yet. The default style (Ep001) still has one view.
@@ -648,28 +738,38 @@ only on the stage layer) that are deferred until the look is locked.
 - **Render cost of style C/B** is high (blur filters; per-frame ink jitter). Optimisation is deliberately deferred until the look is locked.
 - Visual goldens are platform-specific; regenerate on each machine (`npm run test:visual -- --update`).
 
-## 10. Revised roadmap
+## 10. Revised roadmap (Phase 4.1)
 
-Ranked by visual impact × scalability ÷ effort, respecting dependencies.
+Goal: an AI director produces footage of v3 quality **through JSON alone**. Ranked by
+how much each item closes the parity gap (section 4.1), respecting dependencies. Every
+item extends an existing kit or schema; nothing duplicates existing functionality.
+Effort: S ≤ 1 day, M 1–3 days, L about a week. **Status: proposed, awaiting owner review
+before the architectural items (A1–A3) start.**
 
-| # | Item | Impact | Scalability | Effort | Depends on |
-| --- | --- | --- | --- | --- | --- |
-| 0 | ~~Choose visual direction~~ → Cinematic Geometric Editorial. **Approve benchmark v3** (section 3.1) | ★★★ | ★★★ | S | You |
-| 0.5 | Character design: ~~front and back views, expression set~~ (done, awaiting review). Next: three-quarter front, animated turns and expression blends; then lock Person v2 | ★★★ | ★★★ | M | 0 |
-| 0.6 | ~~Shot grammar~~ (done). Next: subject registry, camera collision/occlusion avoidance, composition rules | ★★★ | ★★★ | M | — |
-| 0.7 | Renderer decision: measure the Three.js spike on the Mac mini GPU; adopt the hybrid environment layer only if a trigger fires | ★★ | ★★★ | S | Mac mini run |
-| 1.1 | Light rig as scene data, consumed by the locked theme | ★★★ | ★★ | M | 0 |
-| 1.2 | Character part system (slots, outfits, hair, accessories) + design pass + turnarounds | ★★★ | ★★★ | L | 0 |
-| 1.3 | Action vocabulary in the JSON: walkTo / carry / reach / place / give / point-at / look-at, compiled to puppet + props | ★★★ | ★★★ | M | — |
-| 1.4 | Port default episodes to the theme contract + puppet v2 | ★★ | ★★★ | M | 0 |
-| 2.1 | Voice pipeline: TTS + forced alignment → word timing + visemes | ★★★ | ★★★ | M | — |
-| 2.2 | Diagram/chart library as script elements | ★★★ | ★★★ | M | 0 |
-| 2.3 | Expand CLI scene inputs and shot-selection rules | ★★★ | ★★★ | L | 1.3, 2.2 |
-| 2.4 | SRT export + YouTube metadata | ★ | ★★ | S | — |
-| 3.1 | Rendered-frame QC (contrast, DOM-based collisions, safe areas) | ★★ | ★★★ | M | — |
-| 3.2 | Environment sets + prop library for the chosen niche | ★★★ | ★★ | L (ongoing) | 0, 1.1 |
-| 3.3 | Performance pass for the locked style (cache static layers, cheaper glows) | ★ | ★★★ | M | 0 |
-| 4 | Retention-driven pacing feedback | ★★ | ★★ | M | published videos |
+| # | Item | Directive task | Effort | Depends on |
+| --- | --- | --- | --- | --- |
+| **A1** | **Object-level depth groups** in `Space`: each object (mesh group, sprite) gets one sort key from its nearest bounds, ties broken by a ground-footprint separating-axis test; polygons sort within their object. Make sorting a pure, unit-tested function. Regression tests: a tram-and-walker scene swept through camera azimuths and object motion, plus the Urban chase frames. Removes most hand-tuned `bias`. | 2 | M | — |
+| **A2** | **Shot grammar in JSON:** `camera: {shot: "objectReveal", subject, ...}` resolved by `kit/shotGrammar.ts`, arc paths, DOF/focus subject on keys, line-of-sight check that flags or shifts when foreground geometry blocks the subject. | 3, 4 | M | A1 (occlusion test reuse) |
+| **A3** | **Animated groups and attachment:** group instances keep a parent transform that actions can move, turn, scale and hide as a unit; attach any entity to any entity or to a named hand / carry point (reusing `kit/props.ts` hand-off blending); raise the entity cap where render cost allows. | 1, 3 | M | — |
+| **A4** | **Episode sets and continuity:** shots reference shared episode-level sets; entity state at the end of a shot can seed the next (positions, attachments, motion) for continuity across cuts. | 3 | M | A3 |
+| B1 | **Mechanics family as JSON assets** (approved priority): `gear` (teeth, meshing to a driver), `crankSlider`, `cutawayHousing`, `halfSleeve`, section material, plus leader-line callouts. Then city, terrain and atrium generators. | 1, 6 | M, then L | A3 |
+| B2 | **Character choreography:** continuous turns with three-quarter views, weight transfer in walks, look-at targets, expression blends, grip poses and blended attach/release, all as action fields. | 3 | L | A3 |
+| B3 | **Narration-driven timing:** action and camera times keyed to narration words (`at: {word: 3}` or a cue name); talking and visemes in `scene` shots. | 5, 6 | M | C1 |
+| B4 | **Visual polish within v3:** selective contact shadows, localized light pools, seeded material variation, environment detail and LOD to reduce repetition, title scrim with a contrast check, minimum mobile text size for callouts in QC. Keep the Mac render budget. | 4 | M | A1 |
+| C1 | **Audio on the Mac:** script a local natural voice (Piper, or a macOS premium voice) as a provider, install and verify the aligner, final-mix loudness target and stereo, effects tied to actions. Keep paid TTS optional. | 5 | S–M | — |
+| C2 | **Occlusion and readability QC:** sampled-frame checks for blocked subjects, text contrast and mobile text size, building on production QC. | 4, 6 | M | A1, A2 |
+| **D** | **60–90 s narrated JSON editorial test** in the v3 language with machine cutaways, no episode-specific code, measured authoring time, render time and memory, multi-frame QC. | 6 | M | A1–A3, B1, B3, C1 |
+
+Suggested order: A1 → A3 → A2 → B1 → C1 → B3 → A4 → B2 → B4 → C2 → D. A1, A3 and C1
+are independent and can run in parallel on separate branches.
+
+Earlier roadmap items still open, now folded in: 0.5 (character views and expressions → B2),
+0.6 (shot grammar next steps → A2), 1.3 (action vocabulary → A3, B2), 2.1 (voice pipeline
+→ C1, B3), 2.2 (diagram library → B1), 3.1 (rendered-frame QC → C2), 3.2 (environment sets
+→ B1). Still separate: 0.7 renderer decision (measure the Three.js spike on the Mac mini
+GPU; a per-pixel depth buffer would also solve A1, but is not needed for it), 1.1 light
+rig, 1.2 character part system, 1.4 port default episodes, 2.4 YouTube metadata,
+3.3 performance pass, 4 retention-driven pacing.
 
 ## 11. Working with multiple agents
 
