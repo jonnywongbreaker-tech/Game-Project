@@ -3,7 +3,7 @@ import {POSES} from '../../engine/vocab';
 import {PERSON_EXPRESSIONS} from '../../themes/cge/face';
 import {ASSETS, EASINGS, PROPS, TIME_EPSILON, type Scene, type State} from './types';
 
-type Schema = {
+export type Schema = {
   type?: 'object' | 'array' | 'number' | 'string' | 'boolean' | 'null';
   description?: string;
   enum?: readonly string[];
@@ -22,18 +22,18 @@ type Schema = {
   pattern?: string;
   anyOf?: Schema[];
 };
-const obj = (properties: Record<string, Schema>, ...required: string[]): Schema =>
+export const obj = (properties: Record<string, Schema>, ...required: string[]): Schema =>
   ({type: 'object', properties, required, additionalProperties: false});
-const list = (items: Schema, maxItems: number, minItems = 0): Schema => ({type: 'array', items, maxItems, minItems});
-const number = (minimum: number, maximum: number): Schema => ({type: 'number', minimum, maximum});
-const text = (maxLength: number): Schema => ({type: 'string', minLength: 1, maxLength, pattern: '\\S'});
-const one = (values: readonly string[]): Schema => ({type: 'string', enum: values});
+export const list = (items: Schema, maxItems: number, minItems = 0): Schema => ({type: 'array', items, maxItems, minItems});
+export const number = (minimum: number, maximum: number): Schema => ({type: 'number', minimum, maximum});
+export const text = (maxLength: number): Schema => ({type: 'string', minLength: 1, maxLength, pattern: '\\S'});
+export const one = (values: readonly string[]): Schema => ({type: 'string', enum: values});
 const tuple = (...prefixItems: Schema[]): Schema =>
   ({type: 'array', prefixItems, minItems: prefixItems.length, maxItems: prefixItems.length});
-const vector = (min = -1000, max = 1000): Schema => tuple(number(min, max), number(min, max), number(min, max));
+export const vector = (min = -1000, max = 1000): Schema => tuple(number(min, max), number(min, max), number(min, max));
 const bool: Schema = {type: 'boolean'};
 const id: Schema = {type: 'string', pattern: '^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$'};
-const color: Schema = {type: 'string', pattern: '^#[0-9a-fA-F]{6}$'};
+export const color: Schema = {type: 'string', pattern: '^#[0-9a-fA-F]{6}$'};
 const time = number(0, 130);
 const easing = one(EASINGS);
 const aim: Schema = {anyOf: [vector(), obj({subject: id, offset: vector()}, 'subject')]};
@@ -46,7 +46,7 @@ const state = {
   attach: {anyOf: [id, {type: 'null'}]} as Schema, asset: one(ASSETS),
 };
 const lightBase = {intensity: number(0, 4)};
-const lights: Schema = {anyOf: [
+export const lights: Schema = {anyOf: [
   obj({...lightBase, kind: one(['hemisphere']), sky: color, ground: color}, 'kind', 'sky', 'ground', 'intensity'),
   obj({...lightBase, kind: one(['directional']), dir: vector(-1, 1), color}, 'kind', 'dir', 'color', 'intensity'),
   obj({...lightBase, kind: one(['point']), pos: vector(), color, range: number(.01, 1000)}, 'kind', 'pos', 'color', 'range', 'intensity'),
@@ -57,7 +57,7 @@ const lights: Schema = {anyOf: [
 export const sceneSchema = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   ...obj({
-    entities: list(obj({...state, id, size: vector(.01, 200), seed: text(64),
+    entities: list(obj({...state, id, tone: one(['surface','primary','accent','ink']), size: vector(.01, 200), seed: text(64),
       opening: tuple(number(.01, .98), number(.01, .98), number(0, .49)),
       outline: list(tuple(number(-4, 4), number(0, 4)), 64, 3),
       material: one(['matte', 'metal', 'glass', 'water', 'flat'])}, 'id', 'asset'), 64, 1),
@@ -75,7 +75,7 @@ export const sceneSchema = {
   }, 'entities', 'camera'),
 };
 
-function issue(value: unknown, schema: Schema, path: string): string | undefined {
+export function issue(value: unknown, schema: Schema, path: string): string | undefined {
   const fail = (expected: string) => `${path}: expected ${expected}`;
   if (schema.anyOf) {
     const variants = schema.anyOf.map(candidate => issue(value, candidate, path));

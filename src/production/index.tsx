@@ -12,9 +12,9 @@ import {FPS, HEIGHT, WIDTH, type RenderProps} from './types';
 
 const scenes = {urban: Urban, machine: Machine, nature: Nature, abstract: Abstract};
 
-const ProductionShot: React.FC<RenderProps> = ({template, headline, labels, frames, scene}) => {
+const ProductionShot: React.FC<RenderProps> = ({template, headline, labels, frames, scene, profile}) => {
   const frame = useCurrentFrame();
-  if (template === 'scene') return <ComposedScene scene={scene!} />;
+  if (template === 'scene') return <ComposedScene scene={scene!} profile={profile} frames={frames} />;
   if (template === 'card' || template === 'flow') {
     return (
       <AbsoluteFill style={{background: '#141E2B', color: INK, justifyContent: 'center', padding: 112}}>

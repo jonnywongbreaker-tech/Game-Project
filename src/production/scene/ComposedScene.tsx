@@ -1,5 +1,7 @@
 import React, {useMemo} from 'react';
 import {AbsoluteFill, useCurrentFrame, useVideoConfig} from 'remotion';
+import type {Profile} from './style';
+import {planarShadow} from '../../kit/primitives';
 import {Space, type Sprite} from '../../engine/Space';
 import {FONT, SERIF} from '../../engine/fonts';
 import {add, makeView, projectPoint, type Light, type Poly, type V3} from '../../kit/space';
@@ -15,7 +17,7 @@ const defaultLights: Light[] = [
   {kind: 'directional', dir: [0.5, -.8, .3], color: '#FFE9CF', intensity: .82},
 ];
 
-export const ComposedScene: React.FC<{scene: Scene}> = ({scene}) => {
+export const ComposedScene: React.FC<{scene: Scene; profile?:Profile; frames?:number}> = ({scene,profile,frames}) => {
   const frame = useCurrentFrame();
   const {fps, width, height} = useVideoConfig();
   const time = frame / fps;
@@ -35,6 +37,7 @@ export const ComposedScene: React.FC<{scene: Scene}> = ({scene}) => {
   const states = new Map(scene.entities.map(entity => [entity.id, sampler.sample(entity.id, time)]));
   const polys: Poly[] = [];
   const sprites: Sprite[] = [];
+  const shadowGround=scene.entities.find(entity=>entity.asset==='ground');
   const lights = scene.lights ?? defaultLights;
   const camera = sampler.camera(time);
   const visible = (s: {visible: boolean; opacity: number}) => s.visible && s.opacity > 0;
@@ -44,7 +47,7 @@ export const ComposedScene: React.FC<{scene: Scene}> = ({scene}) => {
     if (state.asset === 'person') {
       const radians = state.rotation * Math.PI / 180;
       const character = personSprite({
-        spec: {...randomPerson(entity.seed ?? entity.id), top: state.color},
+        spec: {...randomPerson(entity.seed ?? entity.id), top: state.color, ...(profile ? {outfit:profile.character} : {})},
         pos: state.position, heading: [Math.sin(radians), 0, Math.cos(radians)], t: time,
         pose: state.pose, expression: state.expression, walked: state.walked, walking: state.walking,
       }, lights);
@@ -56,7 +59,12 @@ export const ComposedScene: React.FC<{scene: Scene}> = ({scene}) => {
         </g>
       )});
     } else {
-      polys.push(...placeGeometry(library.get(entity.id)!.get(state.asset)!.polys, entity, state));
+      const mesh=placeGeometry(library.get(entity.id)!.get(state.asset)!.polys, entity, state);
+      polys.push(...mesh);
+      if(profile?.shadow && shadowGround && entity!==shadowGround && mesh.length<220){
+        const dir=lights.find(light=>light.kind==='directional')?.dir ?? [.6,-1,.3];
+        if(dir[1]<-.05) polys.push(...planarShadow(mesh,dir,sampler.sample(shadowGround.id,time).position[1],profile.palette.ink,profile.shadow));
+      }
     }
   }
 
@@ -68,11 +76,13 @@ export const ComposedScene: React.FC<{scene: Scene}> = ({scene}) => {
     const anchor: V3 = [0, state.scale * anchorHeight, 0];
     return projectPoint(view, add(state.position, anchor));
   };
+  const transitionFrames=(profile?.transitionSeconds??0)*fps;
+  const transition=transitionFrames && frames ? Math.min(1,frame/transitionFrames,(frames-1-frame)/transitionFrames) : 1;
   const background = scene.background ?? '#26364A';
 
   return (
     <AbsoluteFill>
-      <Space camera={camera} polys={polys} sprites={sprites} lights={lights} look={LOOK}
+      <Space camera={camera} polys={polys} sprites={sprites} lights={lights} look={profile?.look??LOOK}
         background={<AbsoluteFill style={{background}} />}
         atmosphere={scene.atmosphere ?? {low: background, high: background, height: 12, density: 0}} />
       <svg width={width} height={height} style={{position: 'absolute', inset: 0}}>
@@ -141,6 +151,9 @@ export const ComposedScene: React.FC<{scene: Scene}> = ({scene}) => {
           </g>;
         })}
       </svg>
+      {profile?.transition==='fade' && transition<1 && <AbsoluteFill style={{background,opacity:1-transition}} />}
+      {profile?.transition==='wipe' && transition<1 && <AbsoluteFill style={{background,
+        clipPath:`inset(0 0 0 ${transition*100}%)`}} />}
     </AbsoluteFill>
   );
 };

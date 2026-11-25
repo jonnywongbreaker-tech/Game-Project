@@ -1,3 +1,4 @@
+import type {Profile, StyleInput, StyleName} from './scene/style';
 import type {Scene} from './scene/types';
 
 export const FPS = 30;
@@ -12,16 +13,24 @@ export type ShotVisual = {
   headline?: string;
   labels?: string[];
   scene?: Scene;
+  profile?: Profile;
 };
 
 export interface ShotInput extends ShotVisual {
   id: string;
-  voice?: {file: string; text: string};
+  voice?: {file: string; text: string; speaker?: string; lead?: number};
   duration?: number;
   tail?: number;
 }
 
+export type Narrator = {provider: string; voice: string; pronunciation?: Record<string,string>};
+export type AudioClip = {file: string; at?: number; gainDb?: number; loop?: boolean; duration?: number};
+export type AudioMix = {music?: AudioClip; effects?: AudioClip[]; loudness?: number; duck?: boolean};
+
 export interface EpisodeInput {
+  style?: StyleName | StyleInput;
+  narrators?: Record<string, Narrator>;
+  audio?: AudioMix;
   id: string;
   title: string;
   shots: ShotInput[];

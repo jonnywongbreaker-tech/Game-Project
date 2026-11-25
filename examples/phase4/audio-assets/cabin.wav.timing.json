@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "source": "pocketsphinx-en-us-forced",
+  "audioSha256": "c96a06322ebc9b8d937827fff6485f41a3b71b92ab5d16d25f1809f3fae55512",
+  "transcript": "The cabin holds pressure in flight.",
+  "words": [
+    {
+      "text": "The",
+      "start": 0.0,
+      "end": 0.06
+    },
+    {
+      "text": "cabin",
+      "start": 0.06,
+      "end": 0.43
+    },
+    {
+      "text": "holds",
+      "start": 0.43,
+      "end": 0.86
+    },
+    {
+      "text": "pressure",
+      "start": 0.86,
+      "end": 1.33
+    },
+    {
+      "text": "in",
+      "start": 1.33,
+      "end": 1.53
+    },
+    {
+      "text": "flight.",
+      "start": 1.53,
+      "end": 2.159456
+    }
+  ]
+}

@@ -11,6 +11,8 @@ import {bundle} from '@remotion/bundler';
 import {ensureBrowser, openBrowser, renderMedia, renderStill, selectComposition} from '@remotion/renderer';
 import {FPS, HEIGHT, SAMPLE_RATE, WIDTH, type RenderProps} from '../../src/production/types';
 import {browserExecutable} from './remotion';
+import {mixEpisodeAudio} from './production-sound';
+import {sampleFrames} from './production-qc';
 import {capabilities} from './production-capabilities';
 import type {EpisodePlan} from './production-plan';
 
@@ -136,7 +138,8 @@ function shotPcm(shot: PlannedShot, episodeFile: string, output: string) {
     ? ['-protocol_whitelist', 'file,pipe', '-i', resolve(dirname(episodeFile), shot.voice.file)]
     : ['-f', 'lavfi', '-i', `anullsrc=r=${SAMPLE_RATE}:cl=mono`];
   const samples = shot.visual.frames * samplesPerFrame;
-  const filter = `aresample=${SAMPLE_RATE},apad=whole_len=${samples},atrim=end_sample=${samples},asetpts=N/SR/TB`;
+  const lead=Math.round((shot.voice?.lead??0)*SAMPLE_RATE);
+  const filter = `aresample=${SAMPLE_RATE},adelay=${lead}S,apad=whole_len=${samples},atrim=end_sample=${samples},asetpts=N/SR/TB`;
   ffmpeg(...input, '-map', '0:a:0', '-af', filter, '-ac', '1', '-ar', String(SAMPLE_RATE), '-f', 's16le', output);
 }
 
@@ -178,23 +181,25 @@ export async function assemble(plan: EpisodePlan, episodeFile: string, videos: s
       }
     }
     await pipeline(audioChunks(), createWriteStream(audio));
-    await publish(output, temp => mix(['-f', 'concat', '-safe', '1', '-i', list], audio, temp));
+    const finalAudio=plan.audio ? join(scratch,'mix.pcm') : audio;
+    if(plan.audio) mixEpisodeAudio(audio,episodeFile,plan.audio,plan.totalFrames/FPS,finalAudio);
+    await publish(output, temp => mix(['-f', 'concat', '-safe', '1', '-i', list], finalAudio, temp));
   } finally {
     rmSync(scratch, {recursive: true, force: true});
   }
 }
 
-export async function contactSheet(renderer: ShotRenderer, plan: EpisodePlan, output: string) {
+export async function contactSheet(renderer: ShotRenderer, plan: EpisodePlan, output: string, count=1) {
   const {defaultWidth, contactRows, contactColumns} = capabilities.preview;
   const scratch = mkdtempSync(join(tmpdir(), 'toon-contact-'));
   const sheets: {file: string; cells: {id: string; frame: number; row: number; column: number}[]}[] = [];
   const pageSize = contactRows * contactColumns;
   try {
-    for (let offset = 0; offset < plan.shots.length; offset += pageSize) {
-      const shots = plan.shots.slice(offset, offset + pageSize);
+    const frames=plan.shots.flatMap(shot=>sampleFrames(shot.visual.frames,count).map(frame=>({shot,frame})));
+    for (let offset = 0; offset < frames.length; offset += pageSize) {
+      const shots = frames.slice(offset, offset + pageSize);
       const cells = [];
-      for (const [index, shot] of shots.entries()) {
-        const frame = Math.floor(shot.visual.frames / 2);
+      for (const [index, {shot,frame}] of shots.entries()) {
         await renderer.preview(shot, frame, join(scratch, `thumb-${index}.png`), defaultWidth);
         cells.push({id: shot.id, frame, row: Math.floor(index / contactColumns) + 1, column: index % contactColumns + 1});
       }

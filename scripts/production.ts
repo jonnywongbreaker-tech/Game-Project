@@ -3,6 +3,9 @@ import {join, resolve} from 'node:path';
 import {parseArgs} from 'node:util';
 import {assemble, contactSheet, exportShot, publish, ShotRenderer} from './lib/production-media';
 import {planEpisode, readEpisode, subtitles} from './lib/production-plan';
+import {inspectPlan} from './lib/production-qc';
+import {narrationRequests} from './lib/production-sound';
+import {readStyle} from './lib/production-composition';
 import {capabilities, commands} from './lib/production-capabilities';
 
 const usage = ['Usage', ...Object.entries(commands).map(([name, spec]) =>
@@ -20,7 +23,7 @@ function integer(text: string, flag: string, min: number, max: number) {
 async function main() {
   const {positionals, values} = parseArgs({allowPositionals: true, options: {
     out: {type: 'string'}, frame: {type: 'string'}, force: {type: 'boolean'},
-    concurrency: {type: 'string'}, width: {type: 'string'}, 'require-alignment': {type: 'boolean'}, help: {type: 'boolean'},
+    concurrency: {type: 'string'}, width: {type: 'string'}, style:{type:'string'}, samples:{type:'string'}, 'require-alignment': {type: 'boolean'}, help: {type: 'boolean'},
   }});
   if (values.help) return console.log(usage);
   const [command, path, shotId] = positionals;
@@ -32,6 +35,9 @@ async function main() {
   if (!path || command === 'capabilities' || positionals.length !== (singleShot ? 3 : 2)) throw new Error(usage);
   const file = resolve(path);
   const episode = readEpisode(file);
+  if(values.style) episode.style=readStyle(values.style);
+  if(command==='narration') return console.log(JSON.stringify(narrationRequests(episode),null,2));
+  const samples=integer(values.samples??(command==='qc'?'5':'1'),'--samples',1,20);
   const selected = episode.shots.find(candidate => candidate.id === shotId);
   if (singleShot && !selected) throw new Error(`Unknown shot "${shotId}" in episode "${episode.id}".`);
   const plan = planEpisode(file, selected ? {...episode, shots: [selected]} : episode);
@@ -43,6 +49,7 @@ async function main() {
     console.error(message);
   }
   const manifest = JSON.stringify(plan, null, 2) + '\n';
+  if(command==='qc') return console.log(JSON.stringify(inspectPlan(plan,samples),null,2));
   if (command === 'check') return process.stdout.write(manifest);
 
   const output = resolve(values.out ?? join('out', 'production', plan.id));
@@ -66,7 +73,7 @@ async function main() {
       await renderer.preview(shot, frame, preview, width);
       return console.log(preview);
     }
-    if (command === 'contact') return console.log(await contactSheet(renderer, plan, output));
+    if (command === 'contact') return console.log(await contactSheet(renderer, plan, output,samples));
     if (command === 'render' && shot) {
       const shotFile = join(output, 'shots', shot.id + '.mp4');
       const video = await renderer.video(shot, cache, values.force, concurrency);

@@ -23,7 +23,7 @@ export type State = {
   attach: string | null;
   asset: Asset;
 };
-export type Entity = {id: string; size?: V3; opening?: [number, number, number]; outline?: [number, number][]; material?: Material['kind']; seed?: string} & Pick<State, 'asset'> & Partial<Omit<State, 'asset'>>;
+export type Entity = {id: string; tone?: 'surface' | 'primary' | 'accent' | 'ink'; size?: V3; opening?: [number, number, number]; outline?: [number, number][]; material?: Material['kind']; seed?: string} & Pick<State, 'asset'> & Partial<Omit<State, 'asset'>>;
 export type Action = {target: string; at: number; duration?: number; ease?: Easing; set: Partial<State>};
 export type Camera = {position: V3; target: Aim; fov?: number; roll?: number};
 export type CameraKey = Partial<Camera> & {at: number; ease?: Easing};

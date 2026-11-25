@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "source": "pocketsphinx-en-us-forced",
+  "audioSha256": "2e78d4f4f2d806932105e352b5e5b4052f7e1639e776cfe8ba4e29941ced22a3",
+  "transcript": "A cutout makes the load turn.",
+  "words": [
+    {
+      "text": "A",
+      "start": 0.0,
+      "end": 0.04
+    },
+    {
+      "text": "cutout",
+      "start": 0.04,
+      "end": 0.6
+    },
+    {
+      "text": "makes",
+      "start": 0.6,
+      "end": 0.9
+    },
+    {
+      "text": "the",
+      "start": 0.9,
+      "end": 0.99
+    },
+    {
+      "text": "load",
+      "start": 0.99,
+      "end": 1.28
+    },
+    {
+      "text": "turn.",
+      "start": 1.28,
+      "end": 1.799546
+    }
+  ]
+}

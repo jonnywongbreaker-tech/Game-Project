@@ -1,3 +1,6 @@
+import {styleSchema,instanceSchema} from './production-composition';
+import {profiles} from '../../src/production/scene/style';
+import {audioSchema,narratorSchema} from './production-sound';
 import {sceneSchema} from '../../src/production/scene/schema';
 import {ENVIRONMENTS, PROPS} from '../../src/production/scene/types';
 import {FPS, HEIGHT, TEMPLATES, WIDTH} from '../../src/production/types';
@@ -14,11 +17,13 @@ const templates = {
 
 export const commands = {
   capabilities: {arguments: '', flags: [], description: 'Print this machine-readable registry'},
-  check: {arguments: '<episode.json>', flags: ['require-alignment'], description: 'Validate assets and print the frame plan with caption timing sources'},
-  preview: {arguments: '<episode.json> <shot-id>', flags: ['frame', 'width', 'out'], description: 'Render a low-resolution PNG at a local shot frame'},
-  contact: {arguments: '<episode.json>', flags: ['out'], description: 'Render ordered thumbnail sheets and a shot-to-cell index'},
-  render: {arguments: '<episode.json> <shot-id>', flags: ['force', 'concurrency', 'out'], description: 'Render or reuse one shot and export it with audio'},
-  assemble: {arguments: '<episode.json>', flags: ['concurrency', 'out', 'require-alignment'], description: 'Reuse valid cached pictures and assemble MP4, SRT, and manifest'},
+  qc: {arguments:'<episode.json>',flags:['samples','style'],description:'Inspect projection, timing and design risks across composed frames'},
+  narration: {arguments:'<episode.json>',flags:[],description:'Emit provider-independent narration requests, including pronunciations and alignment destinations'},
+  check: {arguments: '<episode.json>', flags: ['require-alignment','style'], description: 'Validate assets and print the frame plan with caption timing sources'},
+  preview: {arguments: '<episode.json> <shot-id>', flags: ['frame', 'width', 'out','style'], description: 'Render a low-resolution PNG at a local shot frame'},
+  contact: {arguments: '<episode.json>', flags: ['out','samples','style'], description: 'Render ordered thumbnail sheets and a shot-to-cell index'},
+  render: {arguments: '<episode.json> <shot-id>', flags: ['force', 'concurrency', 'out','style'], description: 'Render or reuse one shot and export it with audio'},
+  assemble: {arguments: '<episode.json>', flags: ['concurrency', 'out', 'require-alignment','style'], description: 'Reuse valid cached pictures and assemble MP4, SRT, and manifest'},
   srt: {arguments: '<episode.json>', flags: ['out', 'require-alignment'], description: 'Export subtitle cues without rendering pictures'},
 } satisfies Record<string, {arguments: string; flags: string[]; description: string}>;
 
@@ -28,6 +33,8 @@ export const capabilities = {
   preview: {defaultWidth: 480, minWidth: 160, maxWidth: WIDTH, defaultFrame: 'midpoint', contactColumns: 4, contactRows: 6},
   commands,
   flags: {
+    style: 'Override the episode profile with editorial, cinematic, or illustrated.',
+    samples:'Number of samples per shot. QC also checks frames around authored action boundaries.',
     out: 'Output directory. Defaults to out/production/<episode-id>.',
     frame: 'Zero-based frame within the selected shot.',
     width: 'Preview width in pixels. Height scales with it.',
@@ -36,6 +43,12 @@ export const capabilities = {
     'require-alignment': 'Fail if any narrated shot has no valid word timing.',
   },
   episode: {
+    style:{schema:styleSchema,profiles,scope:'Composed scenes. Transition overlays occur within the shot duration.'},
+    library:{instanceSchema,definitionFields:['entities','groups','dressing','variants'],
+      variants:'Map variant name to member ID and cosmetic or asset overrides. Scene groups expand to instance-member IDs.'},
+    narration:{catalogEntry:narratorSchema,voiceFields:['file','text','speaker','lead'],pauseUnit:'seconds',tail:'shot.tail',
+      import:'Supply local generated or recorded files plus the existing SHA-bound timings. The narration command expands pronunciation aliases for synthesis.'},
+    audio:audioSchema,
     required: ['id', 'title', 'shots'],
     shot: {required: ['id', 'template'], optional: ['headline', 'labels', 'voice', 'duration', 'tail', 'scene']},
     limits: {id: 64, title: 120, headline: 72, labels: 4, label: 26, transcript: 160, tailSeconds: 10},

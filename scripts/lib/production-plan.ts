@@ -2,6 +2,8 @@ import {execFileSync} from 'node:child_process';
 import {readFileSync, statSync} from 'node:fs';
 import {dirname, isAbsolute, resolve} from 'node:path';
 import {FPS, TEMPLATES, type EpisodeInput, type RenderProps, type ShotInput, type Template} from '../../src/production/types';
+import {expandScene,readStyle,resolveStyle,styleScene} from './production-composition';
+import {readAudio,readNarrators} from './production-sound';
 import {wordTimings} from '../../src/engine/speech';
 import {loadAlignment, type Alignment} from './production-alignment';
 import {readScene, validateSceneDuration} from '../../src/production/scene/schema';
@@ -13,7 +15,7 @@ type PlannedShot = {
   startFrame: number;
   endFrame: number;
   visual: RenderProps;
-  voice?: {file: string; text: string; seconds: number; alignment?: Alignment};
+  voice?: {file: string; text: string; seconds: number; alignment?: Alignment; lead?: number};
 };
 
 export interface EpisodePlan {
@@ -22,6 +24,7 @@ export interface EpisodePlan {
   fps: number;
   totalFrames: number;
   shots: PlannedShot[];
+  audio?: EpisodeInput['audio'];
 }
 
 function object(value: unknown, where: string, fields: string[]): Record<string, unknown> {
@@ -54,7 +57,7 @@ function seconds(value: unknown, where: string, min: number, max: number): numbe
   return value;
 }
 
-function parseShot(value: unknown, index: number): ShotInput {
+function parseShot(value: unknown, index: number, library?: unknown): ShotInput {
   const where = `shots[${index}]`;
   const input = object(value, where, ['id', 'template', 'headline', 'labels', 'voice', 'duration', 'tail', 'scene']);
   const shotId = id(input.id, `${where}.id`);
@@ -75,35 +78,43 @@ function parseShot(value: unknown, index: number): ShotInput {
 
   if (template !== 'scene' && input.scene !== undefined) throw new Error(`${field}.scene: only supported by the scene template.`);
   if (template === 'scene' && headline !== undefined) throw new Error(`${field}.headline: use scene.annotations for composed shots.`);
-  const scene = template === 'scene' ? readScene(input.scene, `${field}.scene`) : undefined;
+  const scene = template === 'scene' ? readScene(expandScene(input.scene,library), `${field}.scene`) : undefined;
   const visual = {id: shotId, template, headline, labels, scene};
   if (input.voice === undefined) {
     if (input.tail !== undefined) throw new Error(`${field}.tail: requires voice.`);
     return {...visual, duration: seconds(input.duration, `${field}.duration`, 1 / FPS, 120)};
   }
   if (input.duration !== undefined) throw new Error(`${field}.duration: conflicts with measured voice duration. Use tail for extra hold.`);
-  const voice = object(input.voice, `${field}.voice`, ['file', 'text']);
+  const voice = object(input.voice, `${field}.voice`, ['file', 'text', 'speaker', 'lead']);
   const file = line(voice.file, `${field}.voice.file`, 1024);
   if (isAbsolute(file) || /^[a-z][a-z0-9+.-]*:/i.test(file) || file.includes('\\')) {
     throw new Error(`${field}.voice.file: use a local relative path with forward slashes.`);
   }
-  return {...visual, voice: {file, text: line(voice.text, `${field}.voice.text`, 160)},
+  return {...visual, voice: {file, text: line(voice.text, `${field}.voice.text`, 160),
+    speaker:voice.speaker===undefined?undefined:id(voice.speaker,`${field}.voice.speaker`),
+    lead:voice.lead===undefined?undefined:seconds(voice.lead,`${field}.voice.lead`,0,10)},
     tail: input.tail === undefined ? 0 : seconds(input.tail, `${field}.tail`, 0, 10)};
 }
 
 export function parseEpisode(value: unknown): EpisodeInput {
-  const input = object(value, 'episode', ['id', 'title', 'shots']);
+  const input = object(value, 'episode', ['id', 'title', 'shots','style','library','narrators','audio']);
   const episodeId = id(input.id, 'episode.id');
   const title = line(input.title, 'episode.title', 120);
   if (!Array.isArray(input.shots) || !input.shots.length) throw new Error('episode.shots: expected a nonempty array.');
-  const shots = input.shots.map(parseShot);
+  const narrators=readNarrators(input.narrators);
+  const style=readStyle(input.style);
+  const audio=readAudio(input.audio);
+  if(input.library!==undefined && !record(input.library)) throw new Error('episode.library must be an object');
+  const shots = input.shots.map((shot,index)=>parseShot(shot,index,input.library));
   const seen = new Set<string>();
   for (const shot of shots) {
+    if(shot.voice?.speaker && (!narrators || !Object.hasOwn(narrators,shot.voice.speaker)))
+      throw new Error(`Unknown narrator "${shot.voice.speaker}" in shot "${shot.id}"`);
     const key = shot.id.toLowerCase();
     if (seen.has(key)) throw new Error(`Duplicate shot ID "${shot.id}".`);
     seen.add(key);
   }
-  return {id: episodeId, title, shots};
+  return {id: episodeId, title, shots,style,narrators,audio};
 }
 
 export function readEpisode(file: string): EpisodeInput {
@@ -127,6 +138,7 @@ function probeAudio(file: string): number {
 
 export function planEpisode(file: string, episode = readEpisode(file), probe = probeAudio): EpisodePlan {
   let cursor = 0;
+  const profile=resolveStyle(episode.style);
   const shots = episode.shots.map((shot): PlannedShot => {
     let voice: PlannedShot['voice'];
     if (shot.voice) {
@@ -138,11 +150,12 @@ export function planEpisode(file: string, episode = readEpisode(file), probe = p
         throw new Error(`Shot "${shot.id}" voice.file "${shot.voice.file}": ${(error as Error).message}`);
       }
     }
-    const duration = voice ? voice.seconds + (shot.tail ?? 0) : shot.duration!;
+    const duration = voice ? voice.seconds + (voice.lead ?? 0) + (shot.tail ?? 0) : shot.duration!;
     const frames = Math.ceil(duration * FPS - 1e-9);
-    if (shot.scene) {
-      validateSceneDuration(shot.scene, duration, `Shot "${shot.id}"`);
-      const sampler = compileScene(shot.scene);
+    const scene=shot.scene && styleScene(shot.scene,profile);
+    if (scene) {
+      validateSceneDuration(scene, duration, `Shot "${shot.id}"`);
+      const sampler = compileScene(scene);
       try {
         for (let frame = 0; frame < frames; frame++) sampler.camera(frame / FPS);
       } catch (error) {
@@ -152,9 +165,9 @@ export function planEpisode(file: string, episode = readEpisode(file), probe = p
     const startFrame = cursor;
     cursor += frames;
     return {id: shot.id, startFrame, endFrame: cursor, voice,
-      visual: {template: shot.template, headline: shot.headline, labels: shot.labels, scene: shot.scene, frames}};
+      visual: {template: shot.template, headline: shot.headline, labels: shot.labels, scene, profile:scene?profile:undefined, frames}};
   });
-  return {id: episode.id, title: episode.title, fps: FPS, totalFrames: cursor, shots};
+  return {id: episode.id, title: episode.title, fps: FPS, totalFrames: cursor, shots, audio:episode.audio};
 }
 
 function timestamp(milliseconds: number): string {
@@ -169,7 +182,7 @@ export function subtitles(plan: EpisodePlan): string {
   const lines: string[] = [];
   for (const {startFrame, voice} of plan.shots) {
     if (!voice) continue;
-    const start = startFrame / plan.fps;
+    const start = startFrame / plan.fps + (voice.lead ?? 0);
     const end = start + voice.seconds;
     const words = voice.alignment?.words.map(word => ({...word, start: start + word.start, end: start + word.end}))
       ?? wordTimings(voice.text, start, end);

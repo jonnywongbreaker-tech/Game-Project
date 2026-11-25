@@ -4,6 +4,7 @@ import {tmpdir} from 'node:os';
 import {dirname, extname, join, resolve} from 'node:path';
 import {audioDigest} from './lib/production-alignment';
 import {publish} from './lib/production-media';
+import {narrationRequests} from './lib/production-sound';
 import {readEpisode} from './lib/production-plan';
 
 async function main() {
@@ -12,7 +13,12 @@ async function main() {
   const episodeFile = resolve(args[0] ?? 'examples/pilot/episode.json');
   const scratch = mkdtempSync(join(tmpdir(), 'toon-voice-'));
   try {
-    for (const shot of readEpisode(episodeFile).shots) {
+    const episode=readEpisode(episodeFile);
+    const requests=narrationRequests(episode);
+    if(requests.some(request=>request.provider!=='local' || request.voice!==undefined)) {
+      throw new Error('External provider requests are exported by production -- narration. Import their resulting audio and timings.');
+    }
+    for (const shot of episode.shots) {
       if (!shot.voice) continue;
       const output = resolve(dirname(episodeFile), shot.voice.file);
       if (extname(output).toLowerCase() !== '.wav') throw new Error(`Shot "${shot.id}": synthesis requires a .wav destination.`);

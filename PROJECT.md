@@ -182,6 +182,21 @@ ffmpeg -i "$out/airplane-windows.mp4" -i "$out/airplane-windows.srt" \
   "$out/airplane-windows-captioned.mp4"
 ```
 
+### Phase 4 visual identity and publication workflow
+
+`examples/phase4/HANDOFF.md` records the short approvals cut, measured
+benchmarks, provider-independent voice workflow, and remaining visual and
+audio limits. Start with `npm run --silent production -- capabilities` to
+inspect style profiles, custom overrides, group instances and variants,
+narration requests, audio mix inputs, and multi-frame QC.
+
+`examples/phase4/sequence.json` uses one nested cabin across three camera
+angles. Override with `--style editorial`, `--style cinematic` or
+`--style illustrated` for the three 12-second tests. There is a separate
+`audio.json` with local narration and measured timings. Keep longer episode
+production behind the visual style approval gate. The 90-second Phase 3
+pilot from `1d54fb0` remains the comparison baseline.
+
 ### Cache and recovery
 
 Edit the JSON for one shot and run
@@ -264,7 +279,7 @@ and a four-cell contact sheet matched their requested frames and shot order.
 The feedback pilot also exported 16 aligned cues directly through
 `production -- srt --require-alignment`.
 
-Type checking and all 56 unit tests passed. Both shipped legacy episodes
+Type checking and all 60 unit tests passed. Both shipped legacy episodes
 reported zero QC errors and zero warnings. All 20 Linux visual goldens passed
 without updates, and the determinism PNGs were byte-identical.
 
@@ -536,7 +551,7 @@ props[], actions[], camera: 'wide'|'medium'|'close'|..., onScreenText?, diagram?
 | Command | What it covers |
 | --- | --- |
 | `npm run typecheck` | TypeScript |
-| `npm test` | 56 unit tests: compiler validation and timing, production plans and SRT, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
+| `npm test` | 60 unit tests: compiler validation and timing, production plans and SRT, determinism, QC detectors, speech timing, rig/IK, planted feet, prop hand-offs, network propagation, procedural assets, the prototype's carry/place logic |
 | `npm run check` | Compiles every script and runs QC: overlap, off-screen/cropped speakers (both formats), fast speech, long Shorts subtitles, short captions, line overlap, sliding walks, pose flicker, repeated gestures, repeated backdrops, pacing metrics |
 | `npm run test:visual` | Renders 20 key frames and compares them with approved goldens (per platform), plus a determinism re-render. `-- --update` approves a new look |
 | `npm run benchmark` | Render speed, real-time factor, projected 10-minute render time, peak memory of the whole render process tree, versatility counts, authoring effort |
