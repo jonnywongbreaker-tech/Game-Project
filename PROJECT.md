@@ -589,9 +589,11 @@ the DOM, safe areas), audio drift against real VO files, unnatural joint angles.
 ## 8. Benchmarks
 
 Latest numbers are in `benchmarks/LATEST.md`; history is in `benchmarks/results.json`.
-All runs so far are on a 4-core cloud Xeon (not the target Mac mini). **Run
-`npm run benchmark` on the Mac mini to establish the real baseline**: Apple Silicon is
-typically several times faster per core, but that is an estimate until measured.
+The Mac mini baseline was measured on 2026-11-25 (table below). The default
+`npm run benchmark` set covers Ep001 and prototypes A/B/C; v3 and the versatility
+compositions have no Mac numbers yet. Visual goldens exist for both `linux-x64` and
+`darwin-arm64` (the Mac set differs from Linux by at most 0.7% of pixels, from font
+rasterisation).
 
 | Benchmark | Current measure |
 | --- | --- |
@@ -601,7 +603,21 @@ typically several times faster per core, but that is an estimate until measured.
 | Performance | See the table below |
 | Reusability | New JSON episodes need zero code. New *visual* actions still need code (roadmap 1.3) |
 
-Measured 2026-11-24 on a 4-core cloud Xeon, 1920×1080, Remotion default concurrency:
+**Mac mini** — measured 2026-11-25 on Apple M6 (12 cores, 25.8 GB, macOS 27.0.1,
+Node 26.13.1), Remotion default concurrency:
+
+| Composition | Video | Render | × real time | Projected 10-min video | Peak memory |
+| --- | --- | --- | --- | --- | --- |
+| Default style (Ep001 Long, 1920×1080) | 43 s | 12.7 s | 0.30× | 3 min | 4.3 GB |
+| Default style (Ep001 Short, 1080×1920) | 43 s | 11.4 s | 0.27× | 2.7 min | 3.5 GB |
+| A · Geometric | 15 s | 4.4 s | 0.30× | 3 min | 3.5 GB |
+| B · Textured | 15 s | 17.9 s | 1.19× | 12 min | 5.8 GB |
+| C · Cinematic | 15 s | 75.3 s | 5.0× | 50 min | 7.5 GB |
+
+The Mac renders 2.7–8× faster than the cloud Xeon. Peak memory is higher (more
+parallel Chromium tabs at default concurrency) but stays under a third of the RAM.
+
+**Linux cloud** — measured 2026-11-24 on a 4-core cloud Xeon, 1920×1080, Remotion default concurrency:
 
 | Composition | Render for 15 s | × real time | Projected 10-min video | Peak memory |
 | --- | --- | --- | --- | --- |
@@ -617,7 +633,7 @@ Measured 2026-11-24 on a 4-core cloud Xeon, 1920×1080, Remotion default concurr
 
 Renderer comparison (same 60 frames): Space SVG 209 ms/frame vs Three.js 324 ms/frame on software WebGL (no GPU). See `docs/RENDERER_ASSESSMENT.md`.
 
-All four fit comfortably in 24 GB. C's cost is dominated by blur filters (depth of
+All fit comfortably in 24 GB on both machines. C's cost is dominated by blur filters (depth of
 field, bloom, soft shadows); B's by per-frame ink jitter on ~1,000 shapes. Both have
 known optimisations (cache static layers as images, pre-blurred sprites, jitter
 only on the stage layer) that are deferred until the look is locked.

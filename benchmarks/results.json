@@ -410,5 +410,99 @@
         "manualSteps": "write script → npm run check → npm run render"
       }
     ]
+  },
+  {
+    "date": "2026-11-25T05:25:29.556Z",
+    "machine": {
+      "platform": "darwin arm64",
+      "cpu": "Apple M6",
+      "cores": 12,
+      "memoryGB": 25.8,
+      "node": "v26.13.1"
+    },
+    "bundleSeconds": 3.4,
+    "concurrency": "default",
+    "renders": [
+      {
+        "id": "Ep001-Long",
+        "resolution": "1920x1080",
+        "frames": 1283,
+        "videoSeconds": 42.766666666666666,
+        "renderSeconds": 12.7,
+        "fps": 101.1,
+        "realtimeFactor": 0.3,
+        "tenMinuteVideoMinutes": 3,
+        "peakMemoryMB": 4275
+      },
+      {
+        "id": "Ep001-Short",
+        "resolution": "1080x1920",
+        "frames": 1283,
+        "videoSeconds": 42.766666666666666,
+        "renderSeconds": 11.4,
+        "fps": 112.1,
+        "realtimeFactor": 0.27,
+        "tenMinuteVideoMinutes": 2.7,
+        "peakMemoryMB": 3453
+      },
+      {
+        "id": "Memory-A-Geometric-Long",
+        "resolution": "1920x1080",
+        "frames": 450,
+        "videoSeconds": 15,
+        "renderSeconds": 4.4,
+        "fps": 101.7,
+        "realtimeFactor": 0.3,
+        "tenMinuteVideoMinutes": 3,
+        "peakMemoryMB": 3485
+      },
+      {
+        "id": "Memory-B-Textured-Long",
+        "resolution": "1920x1080",
+        "frames": 450,
+        "videoSeconds": 15,
+        "renderSeconds": 17.9,
+        "fps": 25.2,
+        "realtimeFactor": 1.19,
+        "tenMinuteVideoMinutes": 11.9,
+        "peakMemoryMB": 5783
+      },
+      {
+        "id": "Memory-C-Cinematic-Long",
+        "resolution": "1920x1080",
+        "frames": 450,
+        "videoSeconds": 15,
+        "renderSeconds": 75.3,
+        "fps": 6,
+        "realtimeFactor": 5.02,
+        "tenMinuteVideoMinutes": 50.2,
+        "peakMemoryMB": 7482
+      }
+    ],
+    "versatility": {
+      "castPresets": 5,
+      "poses": 8,
+      "expressions": 7,
+      "backdrops": 4,
+      "captionStyles": 3,
+      "visualStyles": 3,
+      "characterStates": 56
+    },
+    "automation": [
+      {
+        "id": "Ep001",
+        "beatsPerMinute": 19.7,
+        "scriptBytesPerMinute": 2718,
+        "qcWarnings": 0,
+        "manualSteps": "write script → npm run check → npm run render"
+      },
+      {
+        "id": "Ep002",
+        "beatsPerMinute": 15.2,
+        "scriptBytesPerMinute": 2728,
+        "qcWarnings": 0,
+        "manualSteps": "write script → npm run check → npm run render"
+      }
+    ]
   }
 ]
