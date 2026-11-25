@@ -197,6 +197,33 @@ angles. Override with `--style editorial`, `--style cinematic` or
 production behind the visual style approval gate. The 90-second Phase 3
 pilot from `1d54fb0` remains the comparison baseline.
 
+### Claude Code handoff verification (2026-11-25)
+
+Claude Code recovered `06d4143` from GitHub (`codex/production-pipeline-mvp`,
+pushed by the owner). The history is linear on `c4607bf`: `404b042`, `46a0590`,
+`cd7f17e`, `1d54fb0`, `06d4143`. No bundle import was needed. On a separate
+4-core Linux cloud container (15 GiB, Chromium 1243, FFmpeg 6.1.1, Node 22):
+
+- `npm ci`, type checking, 60/60 unit tests and legacy QC (0 errors, 0 warnings) passed.
+- All 20 visual plates matched at 0.000 % and the determinism re-render matched.
+- Phase 4 samples, cold / warm assembly: editorial 45.1 s / 1.26 s, cinematic
+  38.0 s / 1.31 s, illustrated 38.6 s / 1.33 s. Each MP4 is 360 frames at
+  1080p30 and decodes cleanly. The audio demo assembled with
+  `--require-alignment` in 39.8 s. Multi-frame QC and the contact sheet ran.
+- The 90-second pilot reproduced from scratch (Flite voice → check
+  `--require-alignment` → benchmark, concurrency 2): 2,700 frames, 90.000 s,
+  23 SRT cues, full decode. Cold 225.19 s, peak RSS 2.72 GiB; warm 5.96 s with
+  15/15 cached shots, peak RSS 0.28 GiB.
+
+Observations: multi-frame QC raises about 430 `projected-overlap` flags per
+style on the nested cabin, because the bounding boxes of set pieces overlap by
+design. It needs group-aware suppression before it can flag real defects. The
+three profiles share geometry, framing and blocking, so the comparison mainly
+tests palette, material, type and transitions, not composition. The status
+row "Approved: Cinematic Geometric Editorial" in §2 predates Phase 4. Treat
+style selection as open until the owner approves a profile. Apple Silicon
+numbers are still unmeasured.
+
 ### Cache and recovery
 
 Edit the JSON for one shot and run
