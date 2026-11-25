@@ -666,7 +666,8 @@ Ranked by visual impact × scalability ÷ effort, respecting dependencies.
   from GitHub while the Mac is off. They run tests and short preview renders in the
   cloud and push their branches. Nothing reaches the other side unless it is pushed.
 - **`engine` is the main branch.** It replaces `codex/production-pipeline-mvp`. The
-  old Flutter game on `main` and `claude/flutter-idle-rpg-mvp-*` is retired.
+  old Flutter game (`claude/flutter-idle-rpg-mvp-4vlqsp`, still the GitHub default
+  branch until the owner changes it) is retired.
 - **Large files never go to git.** Renders, shot caches (`out/**/.cache`), review packs,
   bundles and benchmark logs live under the ignored `out/` folder. Commit only code,
   episode JSON, docs, small audio stems with their timing sidecars, and approved goldens.
