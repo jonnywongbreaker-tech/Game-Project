@@ -1,9 +1,136 @@
-# Art direction proposal (Phase 4.2, for review)
+# Art direction: Vibrant Illustrated Worlds
 
-**Status:** exploration. No style is approved. No engine work follows from this document
-until the owner reviews the reference images and approves a direction.
+**Status (2026-11-25):** working direction, set by the owner after visual research. Not
+final: no artwork, palette or style is locked yet. No engine development resumes until the
+owner and Claude Code agree on this document. Earlier explorations are kept below as
+history (section 6 and Appendix A).
 
-## 1. Production philosophy (confirmed)
+## 1. Production philosophy
+
+- **Code-first hybrid artwork.** Reusable assets drawn as code (SVG) by default; AI-generated
+  artwork only where it clearly improves quality.
+- **Near-zero recurring cost.** Local rendering on the Mac mini; paid services (ElevenLabs,
+  image generation) are optional inputs, never render dependencies.
+- **Reusable, modular libraries:** environments, props, figures and diagram parts, built
+  to be split into independently animated layers.
+- **Cinematic 2.5D first** (layered parallax, camera moves, masks, reveals, transformations);
+  the 3D renderer stays available for technical explanations.
+- **Faceless professional narration** (ElevenLabs). No recurring cartoon presenter. Adult
+  figures appear only where a scene needs a person.
+- **Minimal human intervention**, and one codebase across many educational niches.
+
+Workflow: Script → ElevenLabs narration → Director skill → Artwork and storyboard →
+2.5D animation → Sound design → Quality control → Finished video.
+
+## 2. The direction
+
+**Vibrant Illustrated Worlds:** saturated but harmonious colour, soft organic geometry,
+visual charm and playfulness for an adult audience, built from simple reusable procedural
+parts, with scientifically accurate diagrams and smooth, satisfying motion.
+
+Research (owner, 2026-11): Kurzgesagt, TED-Ed, 3Blue1Brown, LEMMiNO, PolyMatter, The School
+of Life, Vox, Veritasium. What we take, as principles, not as a look to copy:
+
+| Source | Principle we adopt |
+| --- | --- |
+| Kurzgesagt | Vibrant colour scripting, organic geometry, charm, one coherent illustrated universe |
+| LEMMiNO | Atmospheric depth and cinematic restraint: calm camera, darkness and haze used to focus |
+| 3Blue1Brown | Satisfying geometric transformations; diagrams that are exact, not decorative |
+| TED-Ed | Artistic composition and visual imagination: an idea per shot, told through a metaphor |
+
+### Visual rules
+
+| Area | Rule |
+| --- | --- |
+| Colour | Each scene has a **colour script**: 3 dominant saturated hues plus 1–2 accents, chosen for harmony (related hues, controlled lightness steps), not a fixed brand palette. Shadows are **coloured** (hue-shifted toward blue or violet, never grey); light is warm or tinted. Keep a clear **value structure** (dark, mid, light) under the saturation so shapes and text still read in greyscale. The muted navy, teal and beige palette is retired. |
+| Gradients | Smooth, purposeful gradients inside crisp silhouettes: one gradient plus at most a rim highlight and a soft inner shadow per shape. No banding, no rainbow fills. |
+| Shapes | Soft, organic geometry: consistent rounded corners, gentle curves, simple primitives assembled into charming forms. Silhouettes first, detail second. Avoid toy-like capsule forms everywhere; vary the shape vocabulary per object family. |
+| Detail | Selective: detail clusters around the focal point; backgrounds simplify with distance. No decorative filler (random blocks, sparkles, stars) unless it means something. |
+| Light and glow | Light sources may glow; nothing else does. Glow is a soft radial gradient, never neon edges. Haze and darkness create depth (LEMMiNO), used with restraint. |
+| Characters | Adults with believable proportions, simplified and stylised (faceless or minimal faces are fine), with personality through pose and silhouette. Never childlike, never generic stock figures, no recurring mascot. |
+| Diagrams | **Scientifically accurate, drawn by code from real geometry** (orbits, angles, mechanisms, data). AI images are never the source of a diagram. Transformations (morph, grow, rotate, unfold) are the explanation (3Blue1Brown). |
+| Composition | One idea per shot, a clear focal point, rule of thirds, negative space for type. Three readable depth planes. Playful, imaginative metaphors are welcome (TED-Ed). |
+| Motion | Smooth easing, gentle continuous camera drift, overlapping secondary motion (floating, breathing, flowing), satisfying transitions between scales and states. |
+| Type | Clean, legible sans for labels and captions, an expressive display face for titles; mobile-readable (captions at least 4.5% of frame height, WCAG AA contrast). |
+| Avoid | Excessive neon glow, generic characters, unnecessary decoration, inaccurate mechanics, oversized cartoon heads, cylinder limbs, cheap low-poly geometry, PowerPoint layouts, clutter. |
+
+### Originality guardrails
+
+Kurzgesagt's look is distinctive and well known; we aim for comparable appeal with our own
+identity, not imitation. We do not use their recurring characters or creature designs (for
+example their birds), their typefaces, their signature palettes or their iconic motifs. Our
+identity should come from:
+
+- **Our own shape grammar:** a defined corner radius scale, curve style and construction
+  rules applied to every asset family.
+- **Our own colour logic:** documented per-niche colour scripts with coloured shadows,
+  rather than one borrowed palette.
+- **A recurring signature motif** that belongs to the channel (a candidate from earlier work:
+  ideas as warm points of light joined by threads, from the memory-network prototypes).
+- **Our own typography pairing**, chosen and licensed for the channel.
+
+## 3. Assessment: reaching this appeal with the existing engine
+
+What gives Kurzgesagt-level appeal is mostly **craft and system**, not exotic technology:
+a disciplined colour script, a consistent shape grammar, layered depth, constant gentle motion,
+and transitions that explain. All of it is cheap to render as SVG.
+
+| Ingredient | Existing engine | Gap (new capability, small unless noted) |
+| --- | --- | --- |
+| Saturated gradients, coloured shadows | SVG linear and radial gradients in theme `Defs`; blend modes (screen, multiply, overlay); the CGE look already shifts shadows toward blue and light toward warm (`themes/cge/identity.ts`) | A 2D **shading recipe** (base gradient, coloured shadow shape, rim highlight) shared by all assets, driven by the scene's colour script |
+| Harmonious per-scene palettes | Palettes are hard-coded per theme | A **colour-script module**: generate and validate harmonious palettes (hue relationships, lightness steps, greyscale value check) from a few inputs |
+| Soft organic geometry | Shape helpers in `themes/draw.ts`; geometry kits produce shapes from code | An **organic shape kit**: rounded and superellipse primitives, smooth blobs, tapered strokes, with the shared corner-radius scale |
+| Layered depth and parallax | `Camera` + `Layer` with per-depth parallax and filters (v2, working) | Exposure in production JSON (the `layers` template assessed earlier) |
+| Atmospheric depth (haze, darkness) | Per-layer tints and filters, gradient overlays, grain (`TextureOverlay`) | Haze and vignette as colour-script settings rather than theme code |
+| Glow on light sources | Radial-gradient glows (cheap); bloom via blur filters (expensive) | A rule: glows are pre-built radial gradients, no live blur, to keep render cost near style A (~0.3× real time) instead of style C (~5×) |
+| Constant gentle motion | Easing and tween helpers, seeded noise, particle and mote logic, network growth and pulses | Reusable "ambient motion" behaviours (float, sway, drift, twinkle, flow) applicable to any asset |
+| Satisfying transformations | Network growth, tweened transforms | **Shape morphing** (path interpolation between shapes) and scale-to-scale zoom transitions, the core 3Blue1Brown-style tool. Medium effort, the most valuable addition. |
+| Accurate diagrams | Network kit, paths, links, annotations, mechanics kit (gears, crank-slider) | A small diagram library (orbits, axes, charts, mechanisms) in the new shape and colour system |
+| Characters | Person v2 (adult proportions, SVG, front/profile/back) but in the muted look | Restyle with the new shape grammar and colour script; no new rig |
+| AI artwork | Not usable as scene layers yet | Optional image layers; best used for **colour scripts, mood and composition references**, then rebuilt in code. AI backgrounds only where code cannot reach the quality. |
+| Narration, timing, mixing, QC, caching | Production CLI (existing) | None for the look itself |
+
+**Render cost.** Gradients, shapes and parallax are cheap: the existing SVG path renders
+style A at about 0.3× real time on the Mac mini. The style stays near that as long as glows
+are gradients, not blur filters.
+
+**Human intervention.** Highest at the start (designing the shape grammar, colour logic and
+first asset families), then low: new videos reuse assets and colour scripts, and the
+director chooses rather than draws.
+
+**How to judge it before building.** Rebuild two of the round-4 references in code with the
+criticisms fixed (for example the mountain valley and the café figure). That shows whether
+code-drawn SVG reaches the target appeal, at what render cost, before any wider work.
+
+## 4. Research record (2026-11-25, OpenArt, Nano Banana Pro, 1376×768)
+
+All images are exploratory and stored outside git (`out/refs/openart-all/`).
+
+| Round | What was tried | What it showed |
+| --- | --- | --- |
+| 1 · D / E / F urban street | Premium geometric editorial, cinematic illustrated matte painting, isometric diorama, from the Appendix A prompts | High craft in all three (E strongest, F charming), but a muted retro palette and a serious period mood: low visual energy. |
+| 2 · Navy palette science diagrams | Flat vector Earth, Sun, axial tilt, seasons, orbit, on deep navy with turquoise, yellow, coral, lavender | Closest to a science-explainer feel, but **diagrams were inaccurate**: two overlapping suns, an axis drawn as an X, double-headed sunlight arrows, text baked in ("SUMMER", "WINTER") despite instructions. Confirms diagrams must be drawn by code. |
+| 3 · Four style blocks on two subjects (café adult, Earth and Sun) | Atmospheric geometric, artisan editorial, luminous geometry, soft dimensional, in ink blue, teal, amber, ivory | Elegant and adult; Earth and Sun accurate when simple. Still restrained, moody and low-energy; luminous geometry the most distinctive. |
+| 4 · Vibrant geometric | Saturated warm-cool palettes, coloured shadows, gradients in crisp silhouettes: café adult, Earth and Sun, mountain valley, engine | Energy and appeal the owner wants. Problems: neon glow and sparkle stars (Earth), generic figure and purposeless background blocks (café), toy-like capsule trees (valley), an unreadable, inaccurate engine. Basis of the current direction. |
+
+## 5. Decisions so far
+
+1. Muted editorial palettes (navy, teal, beige) are retired (owner, after rounds 1–3).
+2. High saturation is intentional; harmony, value structure and restraint in glow keep it adult.
+3. Diagrams and mechanisms are drawn by code from accurate geometry; AI images do not
+   supply technical content.
+4. The engine serves the art direction; no engine work until this document is agreed.
+
+## 6. History
+
+- **v1 to v3 (2026-11-24):** styles A (geometric), B (textured), C (cinematic 2.5D), then the
+  approved "A+C" Cinematic Geometric Editorial, built in 3D as v3. See PROJECT.md section 3.
+- **Phase 4.2 proposal (2026-11-25):** directions D, E and F with 15 reference prompts.
+  Superseded by this document; kept as Appendix A.
+
+## Appendix A: Superseded D / E / F proposal (2026-11-25, kept for record)
+
+### 1. Production philosophy (confirmed)
 
 - **Code-first hybrid artwork.** Reusable assets drawn as code (SVG) by default; AI-generated
   artwork only where it clearly beats code (rich environments, painterly light).
@@ -17,7 +144,7 @@ until the owner reviews the reference images and approves a direction.
   illustrated characters appear only where a scene needs a person.
 - **Minimal human intervention**, and one codebase for many educational niches.
 
-## 2. Shared art rules (apply to every style)
+### 2. Shared art rules (apply to every style)
 
 | Area | Rule |
 | --- | --- |
@@ -31,7 +158,7 @@ until the owner reviews the reference images and approves a direction.
 | Layering | Foreground, midground and background never fuse: each plane has a clean silhouette edge so it can be cut out and moved. No text or logos baked into artwork. |
 | Avoid | Cartoon heads, childlike characters, cylinder limbs, generic corporate vector ("Memphis") art, low-poly game geometry, heavy bloom and blur, repeated identical buildings or trees, slide-deck layouts, clutter. |
 
-## 3. The three directions
+### 3. The three directions
 
 **D: Premium Geometric Editorial.** Magazine-grade editorial illustration: precise
 geometric construction, flat planes with subtle gradients and soft shadow shapes, fine paper
@@ -49,14 +176,14 @@ a cut ground slab: detailed architecture, bevelled forms, matte materials, soft 
 shadows. Excellent for systems and processes (how money moves, how an engine works), less
 emotional for human stories.
 
-## 4. Reference prompts (15 images)
+### 4. Reference prompts (15 images)
 
 Each prompt is self-contained: a shared **composition** block (identical across styles, so
 the comparison is about art, not scene choice) plus a **style** block and a **negative**
 line. All images are 16:9 (1920×1080 or the tool's nearest). Prompts are model-agnostic;
 where a tool has a separate negative field, paste the negative line there.
 
-### Style blocks
+#### Style blocks
 
 - **D:** premium geometric editorial illustration, sophisticated magazine art direction,
   precise geometric construction, mature adult proportions (7.5 heads tall), clean
@@ -80,7 +207,7 @@ where a tool has a separate negative field, paste the negative line there.
   *Negative:* low-poly, video game, voxel, toy plastic, tilt-shift blur, cartoon, clutter,
   text, logos, watermark.
 
-### Composition blocks
+#### Composition blocks
 
 1. **Urban street.** A mid-rise city street in late-afternoon light, seen from slightly
    above eye level at a three-quarter angle, buildings on both sides receding toward a
@@ -105,7 +232,7 @@ where a tool has a separate negative field, paste the negative line there.
    payment through a payment network hub (centre), arriving at a bank building or vault
    (right); simple directional flow markers along the path, clear sequence, uncluttered.
 
-### Full prompts
+#### Full prompts
 
 Assemble each as: `[composition] — [style block]. 16:9.` plus the style's negative line.
 D prompts are written out in full. In E rows, replace the bracketed note with the matching
@@ -134,7 +261,7 @@ as the composition.
 comparison is between styles, not lucky seeds. Note which images needed the most retries:
 that is an early signal of production cost.
 
-## 5. Feasibility assessment
+### 5. Feasibility assessment
 
 Ratings: ●●● strong, ●● moderate, ● weak. "Engine today" means the existing code with no
 new capabilities.
@@ -152,7 +279,7 @@ new capabilities.
 | Human time per video (estimate) | Low once the library exists | Medium: curate AI images, separate layers, fix artifacts | Low to medium once the tile library exists |
 | Long-term scalability | ●●● Library grows by code | ●● Depends on AI consistency and layer separation tooling | ●●● Library grows by tiles; strong for series |
 
-### What the existing engine covers today vs. what is new
+#### What the existing engine covers today vs. what is new
 
 | Need | Engine today | New capability needed |
 | --- | --- | --- |
@@ -166,7 +293,7 @@ new capabilities.
 | Grain, light, grade, atmosphere | Yes: grain overlays, blend modes, glows, grade layers (style C) | Exposure as style-profile settings |
 | Narration, timing, mix, QC, caching | Yes (production CLI) | None for this phase |
 
-### Observations for the review
+#### Observations for the review
 
 - **The three can coexist** under one identity (shared palette, type and light rules):
   E for establishing shots and atmosphere, D for people and explanation, F for systems and
